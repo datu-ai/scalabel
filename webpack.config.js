@@ -73,6 +73,7 @@ let serverConfig = {
   devtool: '',
   entry: {
     main: __dirname + '/app/src/server/main.ts',
+    grpctest: __dirname + '/app/src/bot/proto.ts'
   },
   output: {
     filename: '[name].js',
