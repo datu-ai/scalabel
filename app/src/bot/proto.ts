@@ -1,44 +1,76 @@
-import * as protoLoader from '@grpc/proto-loader'
 import * as grpc from 'grpc'
+import * as common from './proto_gen/commons_pb.js'
+import * as services from './proto_gen/model_deployment_service_grpc_pb.js'
+import * as messages from './proto_gen/model_deployment_service_pb.js'
 
-const PROTO_PATH = __dirname + '/../../proto/model_deployment_service.proto'
+/**
+ * Get an stub for the model deployment client.
+ */
+function getGRPCStub (): services.DeploymentServiceClient {
+  return new services.DeploymentServiceClient(
+    'localhost:52051', grpc.credentials.createInsecure()
+  )
+}
 
-// Suggested options for similarity to existing grpc.load behavior
-const packageDefinition = protoLoader.loadSync(
-    PROTO_PATH,
-  {keepCase: true,
-    longs: String,
-    enums: String,
-    defaults: true,
-    oneofs: true
-  })
-const protoDescriptor = grpc.loadPackageDefinition(packageDefinition) as any
-// Console.log(protoDescriptor)
-// The protoDescriptor object has the full package hierarchy
-const service = protoDescriptor.deployment_service.DeploymentService
+/**
+ * Initial set up to deploy a model
+ */
+async function createTask (
+  grpcStub: services.DeploymentServiceClient):
+  Promise<messages.CreateDeploymentTaskResponse> {
+  const req = new messages.CreateDeploymentTaskRequest()
+  const taskType = common.TaskType.OBJECT_DETECTION_2D
+  req.setProjectId('abcde12345')
+  req.setTaskType(taskType)
 
-const stub = new service(
-  'localhost:52051', grpc.credentials.createInsecure())
-
-// Const boxInput = [
-//   {
-//     box_lists: [
-//       {
-//         boxes: {
-//           bottom_left: { x: 100, y: 100 },
-//           top_right: { x: 200, y: 200 }
-//         }
-//       }
-//     ]
-//   }
-// ]
-
-async function createTask (grpcStub: any) {
   return new Promise((resolve, reject) => {
-    grpcStub.createDeploymentTask({
-      project_id: 'abcde12345',
-      task_type: 0
-    }, (err: Error, result: any) => {
+    grpcStub.createDeploymentTask(req,
+      (err: Error | null, result: messages.CreateDeploymentTaskResponse) => {
+        if (err) {
+          reject(err)
+          return
+        }
+        resolve(result)
+      })
+  })
+}
+
+/**
+ * Deploy an initialized model
+ */
+async function deployModel (
+  grpcStub: services.DeploymentServiceClient, deployId: string):
+  Promise<messages.DeployResponse> {
+  const req = new messages.DeployRequest()
+  req.setProjectId('abcde12345')
+  req.setNumGpus(1)
+  req.setDeploymentTaskId(deployId)
+
+  return new Promise((resolve, reject) => {
+    grpcStub.deployModel(req,
+      (err: Error | null, result: messages.DeployResponse) => {
+        if (err) {
+          reject(err)
+          return
+        }
+        resolve(result)
+      })
+  })
+}
+
+/**
+ * Do inference on a deployed model
+ */
+async function infer (
+  grpcStub: services.DeploymentServiceClient, deployId: string):
+  Promise<messages.InferenceResponse> {
+  const req = new messages.InferenceRequest()
+  req.setProjectId('abcde12345')
+  req.setDeploymentTaskId(deployId)
+  req.setUrlListList(['https://datusagemaker.s3-us-west-2.amazonaws.com/toy/000000.png'])
+  return new Promise((resolve, reject) => {
+    grpcStub.performInference(req, (
+      err: Error | null, result: messages.InferenceResponse) => {
       if (err) {
         reject(err)
         return
@@ -48,92 +80,19 @@ async function createTask (grpcStub: any) {
   })
 }
 
-async function deployModel (grpcStub: any, deployId: string) {
-  return new Promise((resolve, reject) => {
-    grpcStub.deployModel({
-      project_id: 'abcde12345',
-      num_gpus: 1,
-      deployment_task_id: deployId
-    }, (err: Error, result: any) => {
-      if (err) {
-        reject(err)
-        return
-      }
-      resolve(result)
-    })
-  })
-}
-
-async function infer (grpcStub: any, deployId: string) {
-  return new Promise((resolve, reject) => {
-    grpcStub.performInference({
-      project_id: 'abcde12345',
-      url_list: ['https://datusagemaker.s3-us-west-2.amazonaws.com/toy/000000.png'],
-      deployment_task_id: deployId
-    }, (err: Error, result: any) => {
-      if (err) {
-        reject(err)
-        return
-      }
-      resolve(result)
-    })
-  })
-}
-
+/**
+ * Set up and perform inference
+ */
 async function main () {
+  const stub = getGRPCStub()
   const res = await createTask(stub)
-  let deployId = (res as any).deployment_task_id as string
+  let deployId = res.getDeploymentTaskId()
   const res2 = await deployModel(stub, deployId)
-  deployId = (res2 as any).deployment_task_id as string
+  deployId = res2.getDeploymentTaskId()
   const res3 = await infer(stub, deployId)
-  console.log((res3 as any).detection_result[0].detections)
+  console.log(res3.getDetectionResultList()[0].getDetectionsList())
 }
 
 main().then().catch((error: Error) => {
   console.log(error)
 })
-
-// Stub.createDeploymentTask({
-//   project_id: 'abcde12345',
-//   task_type: 0
-// }, (err: any, result: any) => {
-//   if (err) {
-//     console.log(err)
-//   } else {
-//     stub.deployModel({
-//       project_id: 'abcde12345',
-//       num_gpus: 1,
-//       deployment_task_id: result.deployment_task_id
-//     }, (err2: any, result2: any) => {
-//       if (err2) {
-//         console.log(err2)
-//       } else {
-//         stub.performInference({
-//           deployment_task_id: result2.deployment_task_id,
-//           box_lists: boxInput,
-//           url_list: ['https://datusagemaker.s3-us-west-2.amazonaws.com/toy/000000.png']
-//         }, (err3: any, result3: any) => {
-//           if (err3) {
-//             console.log(err3)
-//           } else {
-//             console.log(result3.detection_result[0].detections)
-//           }
-//         })
-//       }
-//     })
-//   }
-// })
-
-// Stub.performInference({
-//   project_id: 'abc',
-//   deployment_task_id: 'abc2',
-//   image_list: [],
-//   url_list: [],
-//   box_lists: []
-// }, (err: any, result: any) => {
-//   if (err) {
-//     console.log(err)
-//   } else {
-//     console.log(result)
-//   }
-// })
