@@ -93,6 +93,6 @@ async function main () {
   console.log(res3.getDetectionResultList()[0].getDetectionsList())
 }
 
-main().then().catch((error: Error) => {
-  console.log(error)
+main().then().catch((err: Error) => {
+  console.log(err)
 })
