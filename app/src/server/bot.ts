@@ -56,6 +56,7 @@ export class Bot {
     deploymentClient: DeploymentClient, botData: BotData,
     botHost: string, botPort: number) {
     this.deploymentClient = deploymentClient
+    console.log(this.deploymentClient)
     this.projectName = botData.projectName
     this.taskIndex = botData.taskIndex
     this.botId = botData.botId
