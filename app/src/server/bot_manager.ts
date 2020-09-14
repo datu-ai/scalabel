@@ -1,3 +1,4 @@
+import { DeploymentClient } from '../bot/deployment_client'
 import { uid } from '../common/uid'
 import { BotConfig } from '../types/config'
 import {
@@ -19,15 +20,19 @@ export class BotManager {
   protected subscriber: RedisPubSub
   /** the redis client for storage */
   protected redisClient: RedisClient
+  /** the deployment client for the models */
+  protected deploymentClient: DeploymentClient
   /** the time in between polls that check session activity */
   protected pollTime: number
 
   constructor (
     config: BotConfig, subscriber: RedisPubSub,
-    redisClient: RedisClient, pollTime?: number) {
+    redisClient: RedisClient, deploymentClient: DeploymentClient,
+    pollTime?: number) {
     this.config = config
     this.subscriber = subscriber
     this.redisClient = redisClient
+    this.deploymentClient = deploymentClient
     if (pollTime) {
       this.pollTime = pollTime
     } else {
@@ -132,7 +137,7 @@ export class BotManager {
     Logger.info(
       `Creating bot for project ${botData.projectName}, task ${botData.taskIndex}`)
     const bot = new Bot(
-      botData, this.config.host, this.config.port)
+      this.deploymentClient, botData, this.config.host, this.config.port)
 
     const pollId = setInterval(async () => {
       await this.monitorActivity(bot, pollId)

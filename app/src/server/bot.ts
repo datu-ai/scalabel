@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig } from 'axios'
 import io from 'socket.io-client'
+import { DeploymentClient } from '../bot/deployment_client'
 import { configureStore } from '../common/configure_store'
 import { uid } from '../common/uid'
 import { index2str } from '../common/util'
@@ -48,8 +49,13 @@ export class Bot {
   protected axiosConfig: AxiosRequestConfig
   /** Number of actions received via broadcast */
   private actionCount: number
+  /** The deployment client for the models */
+  private deploymentClient: DeploymentClient
 
-  constructor (botData: BotData, botHost: string, botPort: number) {
+  constructor (
+    deploymentClient: DeploymentClient, botData: BotData,
+    botHost: string, botPort: number) {
+    this.deploymentClient = deploymentClient
     this.projectName = botData.projectName
     this.taskIndex = botData.taskIndex
     this.botId = botData.botId
