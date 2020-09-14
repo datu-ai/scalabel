@@ -9,7 +9,7 @@ import { EventName } from '../const/connection'
 import Logger from '../server/logger'
 import { getPyConnFailedMsg } from '../server/util'
 import { AddLabelsAction, BaseAction } from '../types/action'
-import { ItemExport } from '../types/bdd'
+import { LabelExport } from '../types/bdd'
 import {
   ActionPacketType, BotData,
   ModelQuery, RegisterMessageType, SyncActionMessageType
@@ -52,7 +52,7 @@ export class Bot {
   /** The deployment client for the models */
   private deploymentClient: DeploymentClient
 
-  constructor(
+  constructor (
     deploymentClient: DeploymentClient, botData: BotData,
     botHost: string, botPort: number) {
     this.deploymentClient = deploymentClient
@@ -98,7 +98,7 @@ export class Bot {
    * Called when io socket establishes a connection
    * Registers the session with the backend, triggering a register ack
    */
-  public connectHandler() {
+  public connectHandler () {
     const message: RegisterMessageType = {
       projectName: this.projectName,
       taskIndex: this.taskIndex,
@@ -115,7 +115,7 @@ export class Bot {
    * Called when backend sends ack of registration of this session
    * Initialized synced state
    */
-  public registerAckHandler(syncState: State) {
+  public registerAckHandler (syncState: State) {
     this.store = configureStore(syncState)
   }
 
@@ -123,7 +123,7 @@ export class Bot {
    * Called when backend sends ack for actions that were sent to be synced
    * Simply logs these actions for now
    */
-  public async actionBroadcastHandler(
+  public async actionBroadcastHandler (
     message: SyncActionMessageType): Promise<AddLabelsAction[]> {
     const actionPacket = message.actions
     // If action was already acked, or if action came from a bot, ignore it
@@ -158,7 +158,7 @@ export class Bot {
   /**
    * Broadcast the synthetically generated actions
    */
-  public broadcastActions(
+  public broadcastActions (
     actions: AddLabelsAction[], triggerId: string) {
     const actionPacket: ActionPacketType = {
       actions,
@@ -178,14 +178,14 @@ export class Bot {
   /**
    * Close any external resources
    */
-  public kill() {
+  public kill () {
     this.socket.disconnect()
   }
 
   /**
    * Gets the number of actions for the bot
    */
-  public getActionCount(): number {
+  public getActionCount (): number {
     return this.actionCount
   }
 
@@ -193,14 +193,14 @@ export class Bot {
    * Sets action counts to 0 for the bot
    */
 
-  public resetActionCount() {
+  public resetActionCount () {
     this.actionCount = 0
   }
 
   /**
    * Wraps instance variables into data object
    */
-  public getData(): BotData {
+  public getData (): BotData {
     return {
       botId: this.botId,
       projectName: this.projectName,
@@ -212,14 +212,14 @@ export class Bot {
   /**
    * Get the current redux state
    */
-  public getState(): State {
+  public getState (): State {
     return this.store.getState().present
   }
 
   /**
    * Group the queries by their endpoints
    */
-  private groupQueriesByEndpoint(
+  private groupQueriesByEndpoint (
     queries: ModelQuery[]): { [key: string]: ModelQuery[] } {
     const endpointToQuery: { [key: string]: ModelQuery[] } = {}
     for (const query of queries) {
@@ -235,7 +235,7 @@ export class Bot {
    * Execute queries and get the resulting actions
    * Batches the queries for each endpoint
    */
-  private async executeQueries(
+  private async executeQueries (
     queries: ModelQuery[]): Promise<AddLabelsAction[]> {
     const actions: AddLabelsAction[] = []
     const endpointToQuery = this.groupQueriesByEndpoint(queries)
@@ -243,10 +243,10 @@ export class Bot {
     // TODO: currently waits for each endpoint sequentially, can parallelize
     for (const endpoint of Object.keys(endpointToQuery)) {
       const modelEndpoint = new URL(endpoint, this.modelAddress)
-      const sendData: ItemExport[] = []
+      const sendData: LabelExport[] = []
       const itemIndices: number[] = []
       for (const query of endpointToQuery[endpoint]) {
-        sendData.push(query.data)
+        sendData.push(query.label)
         itemIndices.push(query.itemIndex)
       }
 
@@ -273,7 +273,7 @@ export class Bot {
   /**
    * Compute queries for the actions in the packet
    */
-  private packetToQueries(packet: ActionPacketType): ModelQuery[] {
+  private packetToQueries (packet: ActionPacketType): ModelQuery[] {
     const queries: ModelQuery[] = []
     for (const action of packet.actions) {
       if (action.sessionId !== this.sessionId) {
@@ -300,7 +300,7 @@ export class Bot {
    * Generate BDD data format item corresponding to the action
    * Only handles box2d/polygon2d actions, so assume a single label/shape/item
    */
-  private actionToQuery(
+  private actionToQuery (
     state: State, action: AddLabelsAction): ModelQuery | null {
     const shapeType = action.shapes[0][0][0].shapeType
     const shapes = action.shapes[0][0]
@@ -323,3 +323,9 @@ export class Bot {
     }
   }
 }
+
+// For each action, separate list -> separate models
+// convert action --> args of infer (images, boxes, polys)
+// still set empty args for convenience
+// directly to req, or bdd format?
+// map from url to list of queries (labelexport)

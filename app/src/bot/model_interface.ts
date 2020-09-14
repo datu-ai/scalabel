@@ -1,6 +1,6 @@
 import { addPolygon2dLabel } from '../action/polygon2d'
 import { ModelEndpoint } from '../const/connection'
-import { makeItemExport, makeLabelExport, makeSimplePathPoint2D } from '../functional/states'
+import { makeLabelExport, makeSimplePathPoint2D } from '../functional/states'
 import { convertPolygonToExport } from '../server/export'
 import { AddLabelsAction } from '../types/action'
 import { ModelQuery } from '../types/message'
@@ -28,13 +28,10 @@ export class ModelInterface {
     const label = makeLabelExport({
       box2d: rect
     })
-    const item = makeItemExport({
-      name: this.projectName,
-      url,
-      labels: [label]
-    })
+
     return {
-      data: item,
+      label,
+      url,
       endpoint: ModelEndpoint.PREDICT_POLY,
       itemIndex
     }
@@ -50,13 +47,9 @@ export class ModelInterface {
     const label = makeLabelExport({
       poly2d
     })
-    const item = makeItemExport({
-      name: this.projectName,
-      url,
-      labels: [label]
-    })
     return {
-      data: item,
+      label,
+      url,
       endpoint: ModelEndpoint.REFINE_POLY,
       itemIndex
     }
