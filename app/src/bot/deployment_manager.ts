@@ -6,20 +6,31 @@ import * as services from './proto_gen/model_deployment_service_grpc_pb.js'
 import * as messages from './proto_gen/model_deployment_service_pb.js'
 
 /**
+ * The supported model types
+ */
+export enum ModelType {
+  INSTANCE_SEGMENTATION = 'INSTANCE_SEGMENTATION',
+  OBJECT_DETECTION_2D = 'OBJECT_DETECTION_2D'
+}
+
+const modelTypeToProto: Map<ModelType, common.TaskType> = new Map()
+modelTypeToProto.set(ModelType.INSTANCE_SEGMENTATION,
+  common.TaskType.INSTANCE_SEGMENTATION)
+modelTypeToProto.set(ModelType.OBJECT_DETECTION_2D,
+  common.TaskType.OBJECT_DETECTION_2D)
+
+/**
  * Manages interface to Model Deployment Service
  */
 export class DeploymentManager {
   /** The grpc stub */
   protected stub: services.DeploymentServiceClient
   /** Map from model type to deployment ids */
-  protected modelTypeToDeployID: Map<common.TaskType, string>
+  protected modelTypeToDeployID: Map<ModelType, string>
 
   constructor (config: BotConfig) {
-    const modelAddress = new URL(config.host)
-    modelAddress.port = config.port.toString()
-
     this.stub = new services.DeploymentServiceClient(
-      modelAddress.toString(), grpc.credentials.createInsecure()
+      `${config.host}:${config.port}`, grpc.credentials.createInsecure()
     )
     this.modelTypeToDeployID = new Map()
   }
@@ -27,41 +38,40 @@ export class DeploymentManager {
   /**
    * Completely set up and deploy the model
    */
-  public async deployModel (taskType: common.TaskType) {
-    if (this.modelTypeToDeployID.has(taskType)) {
-      logger.info(`${taskType.toString()} model already deployed.`)
+  public async deployModel (modelType: ModelType) {
+    if (this.modelTypeToDeployID.has(modelType)) {
+      logger.info(`${modelType.toString()} model already deployed.`)
       return
     }
 
     let cdtResponse: messages.CreateDeploymentTaskResponse
     try {
-      cdtResponse = await this.createDeploymentTask(taskType)
+      cdtResponse = await this.createDeploymentTask(modelType)
     } catch (e) {
       logger.error(e)
       return
     }
     const deployId = cdtResponse.getDeploymentTaskId()
 
-    let deployResponse: messages.DeployResponse
     try {
-      deployResponse = await this.finishDeployment(deployId)
+      await this.finishDeployment(deployId)
     } catch (e) {
       logger.error(e)
       return
     }
-    logger.info(`Successfully deployed ${taskType.toString()} model.`)
-    this.modelTypeToDeployID.set(taskType, deployId)
+    logger.info(`Successfully deployed ${modelType.toString()} model.`)
+    this.modelTypeToDeployID.set(modelType, deployId)
   }
 
   /**
    * Run inference on a deployed model
    */
-  public async infer (taskType: common.TaskType):
+  public async infer (modelType: ModelType):
     Promise<messages.InferenceResponse> {
-    const deployId = this.modelTypeToDeployID.get(taskType)
-    if (!deployId) {
+    const deployId = this.modelTypeToDeployID.get(modelType)
+    if (deployId === undefined) {
       return Promise.reject(
-        Error(`${taskType.toString()} model not deployed.`))
+        Error(`${modelType.toString()} model not deployed.`))
     }
     const req = new messages.InferenceRequest()
     req.setProjectId('abcde12345')
@@ -83,8 +93,13 @@ export class DeploymentManager {
   /**
    * Initial set up to deploy a model
    */
-  private async createDeploymentTask (taskType: common.TaskType):
+  private async createDeploymentTask (modelType: ModelType):
     Promise<messages.CreateDeploymentTaskResponse> {
+    const taskType = modelTypeToProto.get(modelType)
+    if (taskType === undefined) {
+      return Promise.reject(Error(`No proto mapping supplied for ${modelType} model.`))
+    }
+
     const req = new messages.CreateDeploymentTaskRequest()
     req.setProjectId('abcde12345')
     req.setTaskType(taskType)

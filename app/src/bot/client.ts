@@ -1,5 +1,4 @@
-import { DeploymentManager } from './deployment_manager.js'
-import * as common from './proto_gen/commons_pb.js'
+import { DeploymentManager, ModelType } from './deployment_manager'
 
 /**
  * Set up and perform inference
@@ -7,12 +6,12 @@ import * as common from './proto_gen/commons_pb.js'
 async function main () {
   const config = {
     on: true,
-    host: 'localhost',
+    host: '127.0.0.1',
     port: 52051
   }
   const manager = new DeploymentManager(config)
-  await manager.deployModel(common.TaskType.OBJECT_DETECTION_2D)
-  const res = await manager.infer(common.TaskType.OBJECT_DETECTION_2D)
+  await manager.deployModel(ModelType.OBJECT_DETECTION_2D)
+  const res = await manager.infer(ModelType.OBJECT_DETECTION_2D)
   console.log(res.getDetectionResultList()[0].getDetectionsList())
 }
 
