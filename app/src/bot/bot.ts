@@ -1,12 +1,13 @@
 import axios, { AxiosRequestConfig } from 'axios'
 import io from 'socket.io-client'
-import { DeploymentClient } from '../bot/deployment_client'
 import { configureStore } from '../common/configure_store'
 import { uid } from '../common/uid'
 import { index2str } from '../common/util'
 import { ADD_LABELS } from '../const/action'
 import { ShapeTypeName } from '../const/common'
 import { EventName } from '../const/connection'
+import Logger from '../server/logger'
+import { getPyConnFailedMsg } from '../server/util'
 import { AddLabelsAction, BaseAction } from '../types/action'
 import { ItemExport } from '../types/bdd'
 import {
@@ -15,9 +16,8 @@ import {
 } from '../types/message'
 import { ReduxStore } from '../types/redux'
 import { PathPoint2DType, RectType, State } from '../types/state'
-import Logger from './logger'
+import { DeploymentClient } from './deployment_client'
 import { ModelInterface } from './model_interface'
-import { getPyConnFailedMsg } from './util'
 
 /**
  * Manages virtual sessions for a single bot
@@ -52,7 +52,7 @@ export class Bot {
   /** The deployment client for the models */
   private deploymentClient: DeploymentClient
 
-  constructor (
+  constructor(
     deploymentClient: DeploymentClient, botData: BotData,
     botHost: string, botPort: number) {
     this.deploymentClient = deploymentClient
@@ -98,7 +98,7 @@ export class Bot {
    * Called when io socket establishes a connection
    * Registers the session with the backend, triggering a register ack
    */
-  public connectHandler () {
+  public connectHandler() {
     const message: RegisterMessageType = {
       projectName: this.projectName,
       taskIndex: this.taskIndex,
@@ -115,7 +115,7 @@ export class Bot {
    * Called when backend sends ack of registration of this session
    * Initialized synced state
    */
-  public registerAckHandler (syncState: State) {
+  public registerAckHandler(syncState: State) {
     this.store = configureStore(syncState)
   }
 
@@ -123,7 +123,7 @@ export class Bot {
    * Called when backend sends ack for actions that were sent to be synced
    * Simply logs these actions for now
    */
-  public async actionBroadcastHandler (
+  public async actionBroadcastHandler(
     message: SyncActionMessageType): Promise<AddLabelsAction[]> {
     const actionPacket = message.actions
     // If action was already acked, or if action came from a bot, ignore it
@@ -158,7 +158,7 @@ export class Bot {
   /**
    * Broadcast the synthetically generated actions
    */
-  public broadcastActions (
+  public broadcastActions(
     actions: AddLabelsAction[], triggerId: string) {
     const actionPacket: ActionPacketType = {
       actions,
@@ -178,14 +178,14 @@ export class Bot {
   /**
    * Close any external resources
    */
-  public kill () {
+  public kill() {
     this.socket.disconnect()
   }
 
   /**
    * Gets the number of actions for the bot
    */
-  public getActionCount (): number {
+  public getActionCount(): number {
     return this.actionCount
   }
 
@@ -193,14 +193,14 @@ export class Bot {
    * Sets action counts to 0 for the bot
    */
 
-  public resetActionCount () {
+  public resetActionCount() {
     this.actionCount = 0
   }
 
   /**
    * Wraps instance variables into data object
    */
-  public getData (): BotData {
+  public getData(): BotData {
     return {
       botId: this.botId,
       projectName: this.projectName,
@@ -212,14 +212,14 @@ export class Bot {
   /**
    * Get the current redux state
    */
-  public getState (): State {
+  public getState(): State {
     return this.store.getState().present
   }
 
   /**
    * Group the queries by their endpoints
    */
-  private groupQueriesByEndpoint (
+  private groupQueriesByEndpoint(
     queries: ModelQuery[]): { [key: string]: ModelQuery[] } {
     const endpointToQuery: { [key: string]: ModelQuery[] } = {}
     for (const query of queries) {
@@ -235,7 +235,7 @@ export class Bot {
    * Execute queries and get the resulting actions
    * Batches the queries for each endpoint
    */
-  private async executeQueries (
+  private async executeQueries(
     queries: ModelQuery[]): Promise<AddLabelsAction[]> {
     const actions: AddLabelsAction[] = []
     const endpointToQuery = this.groupQueriesByEndpoint(queries)
@@ -273,7 +273,7 @@ export class Bot {
   /**
    * Compute queries for the actions in the packet
    */
-  private packetToQueries (packet: ActionPacketType): ModelQuery[] {
+  private packetToQueries(packet: ActionPacketType): ModelQuery[] {
     const queries: ModelQuery[] = []
     for (const action of packet.actions) {
       if (action.sessionId !== this.sessionId) {
@@ -286,7 +286,7 @@ export class Bot {
         const state = this.store.getState().present
         if (action.type === ADD_LABELS) {
           const query = this.actionToQuery(
-              state, action as AddLabelsAction)
+            state, action as AddLabelsAction)
           if (query) {
             queries.push(query)
           }
@@ -300,7 +300,7 @@ export class Bot {
    * Generate BDD data format item corresponding to the action
    * Only handles box2d/polygon2d actions, so assume a single label/shape/item
    */
-  private actionToQuery (
+  private actionToQuery(
     state: State, action: AddLabelsAction): ModelQuery | null {
     const shapeType = action.shapes[0][0][0].shapeType
     const shapes = action.shapes[0][0]

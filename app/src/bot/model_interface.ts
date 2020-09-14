@@ -1,10 +1,10 @@
 import { addPolygon2dLabel } from '../action/polygon2d'
 import { ModelEndpoint } from '../const/connection'
 import { makeItemExport, makeLabelExport, makeSimplePathPoint2D } from '../functional/states'
+import { convertPolygonToExport } from '../server/export'
 import { AddLabelsAction } from '../types/action'
 import { ModelQuery } from '../types/message'
 import { PathPoint2DType, PathPointType, RectType } from '../types/state'
-import { convertPolygonToExport } from './export'
 
 /**
  * API between redux style data and data for the models

@@ -1,21 +1,24 @@
 import axios, { AxiosRequestConfig } from 'axios'
 import io from 'socket.io-client'
+import { Bot } from '../../src/bot/bot'
+import { DeploymentClient } from '../../src/bot/deployment_client'
 import { configureStore } from '../../src/common/configure_store'
 import { uid } from '../../src/common/uid'
 import { index2str } from '../../src/common/util'
 import { EventName } from '../../src/const/connection'
-import { Bot } from '../../src/server/bot'
 import { serverConfig } from '../../src/server/defaults'
 import { AddLabelsAction } from '../../src/types/action'
 import { ItemExport } from '../../src/types/bdd'
 import {
   ActionPacketType, BotData, RegisterMessageType,
-  SyncActionMessageType } from '../../src/types/message'
+  SyncActionMessageType
+} from '../../src/types/message'
 import { ReduxStore } from '../../src/types/redux'
 import { State } from '../../src/types/state'
 import {
   getInitialState, getRandomBox2dAction,
-  getRandomModelPoly } from './util/util'
+  getRandomModelPoly
+} from './util/util'
 
 /**
  *  Mock post request to model server
@@ -48,6 +51,7 @@ let port: number
 let webId: string
 let projectName: string
 let initialState: State
+let deploymentClient: DeploymentClient
 
 beforeAll(() => {
   io.connect = jest.fn().mockImplementation(() => mockSocket)
@@ -62,17 +66,18 @@ beforeAll(() => {
   port = serverConfig.bot.port
   webId = 'fakeUserId'
   initialState = getInitialState(webId)
+  deploymentClient = new DeploymentClient(serverConfig.bot)
 })
 
 // Note that these tests are similar to the frontend tests for synchronizer
 describe('Test simple bot functionality', () => {
   test('Test data access', async () => {
-    const bot = new Bot(botData, host, port)
+    const bot = new Bot(deploymentClient, botData, host, port)
     expect(bot.getData()).toEqual(botData)
   })
 
   test('Test correct registration message gets sent', async () => {
-    const bot = new Bot(botData, host, port)
+    const bot = new Bot(deploymentClient, botData, host, port)
     bot.connectHandler()
 
     checkConnectMessage(bot.sessionId)
@@ -144,7 +149,7 @@ describe('Test bot send-ack loop', () => {
     const numMessages = 5
     const messages = []
     const actionsPerMessage = []
-    for (let _ = 0 ; _ < numMessages ; _++) {
+    for (let _ = 0; _ < numMessages; _++) {
       // Random int from 1 to 10
       const numActions = 1 + Math.floor(Math.random() * 10)
       actionsPerMessage.push(numActions)
@@ -175,8 +180,8 @@ describe('Test bot send-ack loop', () => {
 /**
  * Creates the bot and initializes its store using the register handler
  */
-function setUpBot () {
-  const bot = new Bot(botData, host, port)
+function setUpBot() {
+  const bot = new Bot(deploymentClient, botData, host, port)
   bot.registerAckHandler(initialState)
   return bot
 }
@@ -185,7 +190,7 @@ function setUpBot () {
  * Helper function to update the expected store with
  * the incoming actions and the outgoing predictions
  */
-function updateExpectedStore (
+function updateExpectedStore(
   store: ReduxStore, message: SyncActionMessageType,
   botActions: AddLabelsAction[]) {
   // Apply incoming actions
@@ -200,7 +205,7 @@ function updateExpectedStore (
 /**
  * Helper function for checking that correct connection message was sent
  */
-function checkConnectMessage (sessId: string) {
+function checkConnectMessage(sessId: string) {
   const expectedMessage: RegisterMessageType = {
     projectName: botData.projectName,
     taskIndex: botData.taskIndex,
@@ -215,7 +220,7 @@ function checkConnectMessage (sessId: string) {
 /**
  * Create a sync message with the specified number of actions
  */
-function makeSyncMessage (
+function makeSyncMessage(
   numActions: number, userId: string): SyncActionMessageType {
   const actions: AddLabelsAction[] = []
   for (let _ = 0; _ < numActions; _++) {
@@ -231,7 +236,7 @@ function makeSyncMessage (
 /**
  * Convert action packet to sync message
  */
-function packetToMessage (
+function packetToMessage(
   packet: ActionPacketType, sessionId: string): SyncActionMessageType {
   return {
     actions: packet,
