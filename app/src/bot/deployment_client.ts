@@ -1,17 +1,10 @@
 import * as grpc from 'grpc'
 import logger from '../server/logger'
+import { ModelType } from '../types/bot'
 import { BotConfig } from '../types/config'
 import * as common from './proto_gen/commons_pb.js'
 import * as services from './proto_gen/model_deployment_service_grpc_pb.js'
 import * as messages from './proto_gen/model_deployment_service_pb.js'
-
-/**
- * The supported model types
- */
-export enum ModelType {
-  INSTANCE_SEGMENTATION = 'INSTANCE_SEGMENTATION',
-  OBJECT_DETECTION_2D = 'OBJECT_DETECTION_2D'
-}
 
 /**
  * Manages interface to Model Deployment Service

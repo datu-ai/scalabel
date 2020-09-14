@@ -1,6 +1,4 @@
-import { ModelEndpoint } from '../const/connection'
 import { BaseAction } from './action'
-import { LabelExport } from './bdd'
 
 export interface RegisterMessageType {
   /** Project name of the session */
@@ -39,28 +37,4 @@ export interface ActionPacketType {
   id: string
   /** for bot actions, id of the action packet that triggered them */
   triggerId?: string
-}
-
-/** data kept by each bot user */
-export interface BotData {
-  /** the project name */
-  projectName: string
-  /** the index of the task */
-  taskIndex: number
-  /** the bot user id */
-  botId: string
-  /** the address of the io server */
-  address: string
-}
-
-/** precomputed queries for models */
-export interface ModelQuery {
-  /** the label in bdd format */
-  label: LabelExport
-  /** image url */
-  url: string
-  /** the endpoint for the query */
-  endpoint: ModelEndpoint
-  /** the index of the item modified */
-  itemIndex: number
 }

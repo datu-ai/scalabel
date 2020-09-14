@@ -1,9 +1,8 @@
 import { addPolygon2dLabel } from '../action/polygon2d'
-import { ModelEndpoint } from '../const/connection'
 import { makeLabelExport, makeSimplePathPoint2D } from '../functional/states'
 import { convertPolygonToExport } from '../server/export'
 import { AddLabelsAction } from '../types/action'
-import { ModelQuery } from '../types/message'
+import { ModelQuery, QueryType } from '../types/bot'
 import { PathPoint2DType, PathPointType, RectType } from '../types/state'
 
 /**
@@ -32,7 +31,7 @@ export class ModelInterface {
     return {
       label,
       url,
-      endpoint: ModelEndpoint.PREDICT_POLY,
+      type: QueryType.PREDICT_POLY,
       itemIndex
     }
   }
@@ -50,7 +49,7 @@ export class ModelInterface {
     return {
       label,
       url,
-      endpoint: ModelEndpoint.REFINE_POLY,
+      type: QueryType.REFINE_POLY,
       itemIndex
     }
   }

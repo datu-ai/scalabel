@@ -1,9 +1,3 @@
-/* endpoint names for python server */
-export const enum ModelEndpoint {
-  PREDICT_POLY = 'predictPoly',
-  REFINE_POLY = 'refinePoly'
-}
-
 /* endpoint names for http server */
 export const enum Endpoint {
   POST_PROJECT = '/postProject',

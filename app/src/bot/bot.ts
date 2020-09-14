@@ -10,9 +10,9 @@ import Logger from '../server/logger'
 import { getPyConnFailedMsg } from '../server/util'
 import { AddLabelsAction, BaseAction } from '../types/action'
 import { LabelExport } from '../types/bdd'
+import { BotData, ModelQuery, QueryType } from '../types/bot'
 import {
-  ActionPacketType, BotData,
-  ModelQuery, RegisterMessageType, SyncActionMessageType
+  ActionPacketType, RegisterMessageType, SyncActionMessageType
 } from '../types/message'
 import { ReduxStore } from '../types/redux'
 import { PathPoint2DType, RectType, State } from '../types/state'
@@ -143,10 +143,10 @@ export class Bot {
     this.ackedPackets.add(actionPacket.id)
 
     // Precompute queries so they can potentially execute in parallel
-    const queriesByEndpoint = this.packetToQueries(actionPacket)
+    const queriesByType = this.packetToQueries(actionPacket)
 
-    // Send the queries for execution on the model server
-    const actions = await this.executeQueries(queriesByEndpoint)
+    // Send the queries for execution on the deployment server
+    const actions = await this.executeQueries(queriesByType)
 
     // Dispatch the predicted actions locally
     for (const action of actions) {
@@ -228,10 +228,11 @@ export class Bot {
    * Batches the queries for each endpoint
    */
   private async executeQueries (
-    queriesByEndpoint: Map<string, ModelQuery[]>): Promise<AddLabelsAction[]> {
+    queriesByType: Map<QueryType, ModelQuery[]>):
+    Promise<AddLabelsAction[]> {
     const actions: AddLabelsAction[] = []
     // TODO: currently waits for each endpoint sequentially, can parallelize
-    for (const [endpoint, queries] of queriesByEndpoint.entries()) {
+    for (const [endpoint, queries] of queriesByType.entries()) {
       const modelEndpoint = new URL(endpoint, this.modelAddress)
       const sendData: LabelExport[] = []
       const itemIndices: number[] = []
@@ -264,8 +265,8 @@ export class Bot {
    * Compute queries for the actions in the packet
    */
   private packetToQueries (
-    packet: ActionPacketType): Map<string, ModelQuery[]> {
-    const queriesByEndpoint: Map<string, ModelQuery[]> = new Map()
+    packet: ActionPacketType): Map<QueryType, ModelQuery[]> {
+    const queriesByType: Map<QueryType, ModelQuery[]> = new Map()
     for (const action of packet.actions) {
       if (action.sessionId !== this.sessionId) {
         this.actionCount += 1
@@ -277,13 +278,13 @@ export class Bot {
         const state = this.store.getState().present
         const query = this.actionToQuery(state, action)
         if (query) {
-          const currentQueries = queriesByEndpoint.get(query.endpoint) || []
+          const currentQueries = queriesByType.get(query.type) || []
           currentQueries.push(query)
-          queriesByEndpoint.set(query.endpoint, currentQueries)
+          queriesByType.set(query.type, currentQueries)
         }
       }
     }
-    return queriesByEndpoint
+    return queriesByType
   }
 
   /**
