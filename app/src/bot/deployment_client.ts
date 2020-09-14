@@ -13,26 +13,27 @@ export enum ModelType {
   OBJECT_DETECTION_2D = 'OBJECT_DETECTION_2D'
 }
 
-const modelTypeToProto: Map<ModelType, common.TaskType> = new Map()
-modelTypeToProto.set(ModelType.INSTANCE_SEGMENTATION,
-  common.TaskType.INSTANCE_SEGMENTATION)
-modelTypeToProto.set(ModelType.OBJECT_DETECTION_2D,
-  common.TaskType.OBJECT_DETECTION_2D)
-
 /**
  * Manages interface to Model Deployment Service
  */
-export class DeploymentManager {
+export class DeploymentClient {
   /** The grpc stub */
   protected stub: services.DeploymentServiceClient
   /** Map from model type to deployment ids */
   protected modelTypeToDeployID: Map<ModelType, string>
+  /** Map from model type to proto enum type */
+  protected modelTypeToProto: Map<ModelType, common.TaskType>
 
   constructor (config: BotConfig) {
     this.stub = new services.DeploymentServiceClient(
       `${config.host}:${config.port}`, grpc.credentials.createInsecure()
     )
     this.modelTypeToDeployID = new Map()
+    this.modelTypeToProto = new Map()
+    this.modelTypeToProto.set(ModelType.INSTANCE_SEGMENTATION,
+      common.TaskType.INSTANCE_SEGMENTATION)
+    this.modelTypeToProto.set(ModelType.OBJECT_DETECTION_2D,
+      common.TaskType.OBJECT_DETECTION_2D)
   }
 
   /**
@@ -95,7 +96,7 @@ export class DeploymentManager {
    */
   private async createDeploymentTask (modelType: ModelType):
     Promise<messages.CreateDeploymentTaskResponse> {
-    const taskType = modelTypeToProto.get(modelType)
+    const taskType = this.modelTypeToProto.get(modelType)
     if (taskType === undefined) {
       return Promise.reject(Error(`No proto mapping supplied for ${modelType} model.`))
     }

@@ -1,4 +1,4 @@
-import { DeploymentManager, ModelType } from './deployment_manager'
+import { DeploymentManager, ModelType } from './deployment_client'
 
 /**
  * Set up and perform inference
