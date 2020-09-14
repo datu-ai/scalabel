@@ -1,8 +1,8 @@
+import { ModelInterface } from '../../src/bot/model_interface'
 import { LabelTypeName } from '../../src/const/common'
 import { ModelEndpoint } from '../../src/const/connection'
 import { makePathPoint2D, makeRect } from '../../src/functional/states'
 import { convertPolygonToExport } from '../../src/server/export'
-import { ModelInterface } from '../../src/server/model_interface'
 import { PathPoint2DType, PathPointType, RectType } from '../../src/types/state'
 
 let modelInterface: ModelInterface
@@ -26,11 +26,8 @@ describe('test model interface query construction', () => {
     const query = modelInterface.makeRectQuery(rect, url, itemIndex)
     expect(query.endpoint).toBe(ModelEndpoint.PREDICT_POLY)
     expect(query.itemIndex).toBe(itemIndex)
-
-    const itemData = query.data
-    expect(itemData.name).toBe(projectName)
-    expect(itemData.url).toBe(url)
-    expect(itemData.labels[0].box2d).toEqual(rect)
+    expect(query.url).toBe(url)
+    expect(query.label.box2d).toEqual(rect)
   })
 
   test('poly query construction', () => {
@@ -44,13 +41,10 @@ describe('test model interface query construction', () => {
       points, url, itemIndex, labelType)
     expect(query.endpoint).toBe(ModelEndpoint.REFINE_POLY)
     expect(query.itemIndex).toBe(itemIndex)
-
-    const itemData = query.data
-    expect(itemData.name).toBe(projectName)
-    expect(itemData.url).toBe(url)
+    expect(query.url).toBe(url)
 
     const expectedPoly = convertPolygonToExport(points, labelType)
-    expect(itemData.labels[0].poly2d).toEqual(expectedPoly)
+    expect(query.label.poly2d).toEqual(expectedPoly)
   })
 })
 

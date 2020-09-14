@@ -20,6 +20,13 @@ import { DeploymentClient } from './deployment_client'
 import { ModelInterface } from './model_interface'
 
 /**
+ * Type guard for add labels actions
+ */
+function isAddLabelAction (action: BaseAction): action is AddLabelsAction {
+  return action.type === ADD_LABELS
+}
+
+/**
  * Manages virtual sessions for a single bot
  */
 export class Bot {
@@ -136,10 +143,10 @@ export class Bot {
     this.ackedPackets.add(actionPacket.id)
 
     // Precompute queries so they can potentially execute in parallel
-    const queries = this.packetToQueries(actionPacket)
+    const queriesByEndpoint = this.packetToQueries(actionPacket)
 
     // Send the queries for execution on the model server
-    const actions = await this.executeQueries(queries)
+    const actions = await this.executeQueries(queriesByEndpoint)
 
     // Dispatch the predicted actions locally
     for (const action of actions) {
@@ -217,35 +224,18 @@ export class Bot {
   }
 
   /**
-   * Group the queries by their endpoints
-   */
-  private groupQueriesByEndpoint (
-    queries: ModelQuery[]): { [key: string]: ModelQuery[] } {
-    const endpointToQuery: { [key: string]: ModelQuery[] } = {}
-    for (const query of queries) {
-      if (!(query.endpoint in endpointToQuery)) {
-        endpointToQuery[query.endpoint] = []
-      }
-      endpointToQuery[query.endpoint].push(query)
-    }
-    return endpointToQuery
-  }
-
-  /**
    * Execute queries and get the resulting actions
    * Batches the queries for each endpoint
    */
   private async executeQueries (
-    queries: ModelQuery[]): Promise<AddLabelsAction[]> {
+    queriesByEndpoint: Map<string, ModelQuery[]>): Promise<AddLabelsAction[]> {
     const actions: AddLabelsAction[] = []
-    const endpointToQuery = this.groupQueriesByEndpoint(queries)
-
     // TODO: currently waits for each endpoint sequentially, can parallelize
-    for (const endpoint of Object.keys(endpointToQuery)) {
+    for (const [endpoint, queries] of queriesByEndpoint.entries()) {
       const modelEndpoint = new URL(endpoint, this.modelAddress)
       const sendData: LabelExport[] = []
       const itemIndices: number[] = []
-      for (const query of endpointToQuery[endpoint]) {
+      for (const query of queries) {
         sendData.push(query.label)
         itemIndices.push(query.itemIndex)
       }
@@ -273,8 +263,9 @@ export class Bot {
   /**
    * Compute queries for the actions in the packet
    */
-  private packetToQueries (packet: ActionPacketType): ModelQuery[] {
-    const queries: ModelQuery[] = []
+  private packetToQueries (
+    packet: ActionPacketType): Map<string, ModelQuery[]> {
+    const queriesByEndpoint: Map<string, ModelQuery[]> = new Map()
     for (const action of packet.actions) {
       if (action.sessionId !== this.sessionId) {
         this.actionCount += 1
@@ -284,16 +275,15 @@ export class Bot {
           `Bot received action of type ${action.type}`)
 
         const state = this.store.getState().present
-        if (action.type === ADD_LABELS) {
-          const query = this.actionToQuery(
-            state, action as AddLabelsAction)
-          if (query) {
-            queries.push(query)
-          }
+        const query = this.actionToQuery(state, action)
+        if (query) {
+          const currentQueries = queriesByEndpoint.get(query.endpoint) || []
+          currentQueries.push(query)
+          queriesByEndpoint.set(query.endpoint, currentQueries)
         }
       }
     }
-    return queries
+    return queriesByEndpoint
   }
 
   /**
@@ -301,7 +291,10 @@ export class Bot {
    * Only handles box2d/polygon2d actions, so assume a single label/shape/item
    */
   private actionToQuery (
-    state: State, action: AddLabelsAction): ModelQuery | null {
+    state: State, action: BaseAction): ModelQuery | null {
+    if (!isAddLabelAction(action)) {
+      return null
+    }
     const shapeType = action.shapes[0][0][0].shapeType
     const shapes = action.shapes[0][0]
     const labelType = action.labels[0][0].type
