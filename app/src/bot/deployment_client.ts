@@ -49,6 +49,15 @@ export function parseInstanceSegmentationRes (
 }
 
 /**
+ * Create a new grpc stub connection
+ */
+export function makeStub (config: BotConfig) {
+  return new services.DeploymentServiceClient(
+    `${config.host}:${config.port}`, grpc.credentials.createInsecure()
+  )
+}
+
+/**
  * Manages interface to Model Deployment Service
  */
 export class DeploymentClient {
@@ -61,10 +70,8 @@ export class DeploymentClient {
   /** Map from query type to model type */
   protected queryTypeToModel: Map<QueryType, ModelType>
 
-  constructor (config: BotConfig) {
-    this.stub = new services.DeploymentServiceClient(
-      `${config.host}:${config.port}`, grpc.credentials.createInsecure()
-    )
+  constructor (stub: services.DeploymentServiceClient) {
+    this.stub = stub
     this.modelTypeToDeployID = new Map()
     this.modelTypeToProto = new Map()
     this.modelTypeToProto.set(ModelType.INSTANCE_SEGMENTATION,

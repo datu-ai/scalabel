@@ -2,6 +2,7 @@ import * as fs from 'fs-extra'
 import _ from 'lodash'
 import * as path from 'path'
 import { addBox2dLabel } from '../../../src/action/box2d'
+import * as protoMessages from '../../../src/bot/proto_gen/model_deployment_service_pb.js'
 import { StorageStructure } from '../../../src/const/storage'
 import { makeItem,
   makeSensor, makeState, makeTask } from '../../../src/functional/states'
@@ -94,15 +95,29 @@ export function getRandomBox2dAction (itemIndex: number = 0) {
 }
 
 /**
- * Helper function to generate points of a polygon
- * In the format returned by the model server
+ * Helper function to generate model result given a request
  */
-export function getRandomModelPoly () {
-  const points = []
-  for (let i = 0; i++; i < 5) {
-    points.push([Math.random(), Math.random()])
+export function getDummyModelResult (
+  request: protoMessages.InferenceRequest):
+  protoMessages.InferenceResponse {
+  const segmentations: protoMessages.InstanceSegmentationResult[] = []
+  for (const boxList of request.getBoxListsList()) {
+    const segmentation = new protoMessages.InstanceSegmentationResult()
+    for (const _box of boxList.getBoxesList()) {
+      const polygon = new protoMessages.Polygon()
+      for (let i = 0; i++; i < 5) {
+        const point = new protoMessages.Point()
+        point.setX(Math.random())
+        point.setY(Math.random())
+        polygon.addPoints(point)
+      }
+      segmentation.addPolygons(polygon)
+    }
   }
-  return points
+
+  const result = new protoMessages.InferenceResponse()
+  result.setInstanceSegmentationResultList(segmentations)
+  return result
 }
 
 /**

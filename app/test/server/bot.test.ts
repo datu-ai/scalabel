@@ -1,14 +1,13 @@
-import axios, { AxiosRequestConfig } from 'axios'
 import io from 'socket.io-client'
 import { Bot } from '../../src/bot/bot'
-import { DeploymentClient } from '../../src/bot/deployment_client'
+import { DeploymentClient, makeStub } from '../../src/bot/deployment_client'
+import * as protoMessages from '../../src/bot/proto_gen/model_deployment_service_pb.js'
 import { configureStore } from '../../src/common/configure_store'
 import { uid } from '../../src/common/uid'
 import { index2str } from '../../src/common/util'
 import { EventName } from '../../src/const/connection'
 import { serverConfig } from '../../src/server/defaults'
 import { AddLabelsAction } from '../../src/types/action'
-import { ItemExport } from '../../src/types/bdd'
 import { BotData } from '../../src/types/bot'
 import {
   ActionPacketType, RegisterMessageType,
@@ -17,28 +16,9 @@ import {
 import { ReduxStore } from '../../src/types/redux'
 import { State } from '../../src/types/state'
 import {
-  getInitialState, getRandomBox2dAction,
-  getRandomModelPoly
+  getDummyModelResult, getInitialState,
+  getRandomBox2dAction
 } from './util/util'
-
-/**
- *  Mock post request to model server
- * They should return the same number of prediction actions as request actions
- */
-jest.mock('axios')
-axios.post = jest.fn().mockImplementation(
-  (_endpoint: string, data: ItemExport[], _config: AxiosRequestConfig) => {
-    const points = []
-    for (const _ of data) {
-      points.push(getRandomModelPoly())
-    }
-    return {
-      status: 200,
-      data: {
-        points
-      }
-    }
-  })
 
 let botData: BotData
 const socketEmit = jest.fn()
@@ -47,8 +27,6 @@ const mockSocket = {
   connected: true,
   emit: socketEmit
 }
-let host: string
-let port: number
 let webId: string
 let projectName: string
 let initialState: State
@@ -63,22 +41,34 @@ beforeAll(() => {
     botId: 'fakeBotId',
     address: location.origin
   }
-  host = serverConfig.bot.host
-  port = serverConfig.bot.port
   webId = 'fakeUserId'
   initialState = getInitialState(webId)
-  deploymentClient = new DeploymentClient(serverConfig.bot)
+  const stub = makeStub(serverConfig.bot)
+
+  /**
+   * Mock request to deployment server
+   * Should return the same number of predictions as requests
+   */
+  stub.performInference = jest.fn().mockImplementation((
+    request: protoMessages.InferenceRequest,
+    callback: (
+      error: Error | null, result: protoMessages.InferenceResponse) => void
+  ) => {
+    const result = getDummyModelResult(request)
+    callback(null, result)
+  })
+  deploymentClient = new DeploymentClient(stub)
 })
 
 // Note that these tests are similar to the frontend tests for synchronizer
 describe('Test simple bot functionality', () => {
   test('Test data access', async () => {
-    const bot = new Bot(deploymentClient, botData, host, port)
+    const bot = new Bot(deploymentClient, botData)
     expect(bot.getData()).toEqual(botData)
   })
 
   test('Test correct registration message gets sent', async () => {
-    const bot = new Bot(deploymentClient, botData, host, port)
+    const bot = new Bot(deploymentClient, botData)
     bot.connectHandler()
 
     checkConnectMessage(bot.sessionId)
@@ -182,7 +172,7 @@ describe('Test bot send-ack loop', () => {
  * Creates the bot and initializes its store using the register handler
  */
 function setUpBot () {
-  const bot = new Bot(deploymentClient, botData, host, port)
+  const bot = new Bot(deploymentClient, botData)
   bot.registerAckHandler(initialState)
   return bot
 }
