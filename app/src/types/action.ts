@@ -73,20 +73,21 @@ export interface UpdateSessionStatusAction extends BaseAction {
   newStatus: ConnectionStatus
 }
 
-export interface AddLabelsAction extends BaseAction {
-  /** item of the added label */
+export interface ItemIndexable {
+  /** items the action affects */
   itemIndices: number[]
+}
+
+export interface AddLabelsAction extends BaseAction, ItemIndexable {
   /** labels to add to each item */
   labels: LabelType[][]
   /** shapes for each label */
   shapes: ShapeType[][][]
 }
 
-export interface AddTrackAction extends BaseAction {
+export interface AddTrackAction extends BaseAction, ItemIndexable {
   /** track type */
   trackType: string
-  /** item of the added label */
-  itemIndices: number[]
   /** labels to add to each item */
   labels: LabelType[]
   /** shapes for each label */
@@ -98,18 +99,14 @@ export interface MergeTrackAction extends BaseAction {
   trackIds: IdType[]
 }
 
-export interface ChangeShapesAction extends BaseAction {
-  /** item of the shape */
-  itemIndices: number[]
+export interface ChangeShapesAction extends BaseAction, ItemIndexable {
   /** Shape ids in each item */
   shapeIds: IdType[][]
   /** properties to update for the shape */
   shapes: Array<Array<Partial<ShapeType>>>
 }
 
-export interface ChangeLabelsAction extends BaseAction {
-  /** item of the label */
-  itemIndices: number[]
+export interface ChangeLabelsAction extends BaseAction, ItemIndexable {
   /** Label ID */
   labelIds: IdType[][]
   /** properties to update for the shape */
@@ -130,9 +127,7 @@ export interface UnlinkLabelsAction extends BaseAction {
   labelIds: IdType[]
 }
 
-export interface DeleteLabelsAction extends BaseAction {
-  /** item of the label */
-  itemIndices: number[]
+export interface DeleteLabelsAction extends BaseAction, ItemIndexable {
   /** ID of label to be deleted */
   labelIds: IdType[][]
 }

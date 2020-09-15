@@ -24,6 +24,20 @@ export interface ModelQuery {
   itemIndex: number
 }
 
+/** Grouping of queries for a single item */
+export interface ItemQueries {
+  /** Image url for the item */
+  url: string
+  /** List of queries for the item */
+  queries: ModelQuery[]
+}
+
+// Map from item index to queries for the item
+export type QueriesByItem = Map<number, ItemQueries>
+
+// Map from query type to all queries with that type
+export type QueriesByType = Map<QueryType, QueriesByItem>
+
 /**
  * The supported model queries
  * One model can support multiple queries

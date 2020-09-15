@@ -3,13 +3,13 @@ import io from 'socket.io-client'
 import { configureStore } from '../common/configure_store'
 import { uid } from '../common/uid'
 import { index2str } from '../common/util'
-import { ADD_LABELS } from '../const/action'
 import { EventName } from '../const/connection'
 import Logger from '../server/logger'
 import { getPyConnFailedMsg } from '../server/util'
-import { AddLabelsAction, BaseAction } from '../types/action'
+import { AddLabelsAction, BaseAction, ItemIndexable } from '../types/action'
 import { LabelExport } from '../types/bdd'
-import { BotData, ModelQuery, QueryType } from '../types/bot'
+import { BotData, ItemQueries, ModelQuery,
+  ModelType, QueriesByItem, QueriesByType } from '../types/bot'
 import {
   ActionPacketType, RegisterMessageType, SyncActionMessageType
 } from '../types/message'
@@ -19,10 +19,12 @@ import { DeploymentClient } from './deployment_client'
 import { ModelInterface } from './model_interface'
 
 /**
- * Type guard for add labels actions
+ * Type guard for actions that affect indices
  */
-function isAddLabelAction (action: BaseAction): action is AddLabelsAction {
-  return action.type === ADD_LABELS
+function isIndexableAction (action: BaseAction):
+  action is BaseAction & ItemIndexable {
+  // tslint:disable-next-line: strict-type-predicates
+  return (action as unknown as ItemIndexable).itemIndices !== undefined
 }
 
 /**
@@ -62,7 +64,6 @@ export class Bot {
     deploymentClient: DeploymentClient, botData: BotData,
     botHost: string, botPort: number) {
     this.deploymentClient = deploymentClient
-    console.log(this.deploymentClient)
     this.projectName = botData.projectName
     this.taskIndex = botData.taskIndex
     this.botId = botData.botId
@@ -227,17 +228,23 @@ export class Bot {
    * Batches the queries for each endpoint
    */
   private async executeQueries (
-    queriesByType: Map<QueryType, ModelQuery[]>):
+    queriesByType: QueriesByType):
     Promise<AddLabelsAction[]> {
+    // TODO- remove
+    if (this.actionCount > 100) {
+      await this.deploymentClient.infer(ModelType.OBJECT_DETECTION_2D)
+    }
     const actions: AddLabelsAction[] = []
     // TODO: currently waits for each endpoint sequentially, can parallelize
-    for (const [endpoint, queries] of queriesByType.entries()) {
+    for (const [endpoint, queriesByItem] of queriesByType) {
       const modelEndpoint = new URL(endpoint, this.modelAddress)
       const sendData: LabelExport[] = []
       const itemIndices: number[] = []
-      for (const query of queries) {
-        sendData.push(query.label)
-        itemIndices.push(query.itemIndex)
+      for (const itemQueries of queriesByItem.values()) {
+        for (const query of itemQueries.queries) {
+          sendData.push(query.label)
+          itemIndices.push(query.itemIndex)
+        }
       }
 
       try {
@@ -264,8 +271,8 @@ export class Bot {
    * Compute queries for the actions in the packet
    */
   private packetToQueries (
-    packet: ActionPacketType): Map<QueryType, ModelQuery[]> {
-    const queriesByType: Map<QueryType, ModelQuery[]> = new Map()
+    packet: ActionPacketType): QueriesByType {
+    const queriesByType: QueriesByType = new Map()
     for (const action of packet.actions) {
       if (action.sessionId !== this.sessionId) {
         this.actionCount += 1
@@ -277,9 +284,17 @@ export class Bot {
         const state = this.store.getState().present
         const query = this.actionToQuery(state, action)
         if (query) {
-          const currentQueries = queriesByType.get(query.type) || []
-          currentQueries.push(query)
-          queriesByType.set(query.type, currentQueries)
+          const defaultQueriesByItem: QueriesByItem = new Map()
+          const queriesByItem =
+            queriesByType.get(query.type) || defaultQueriesByItem
+          const defaultItemQueries: ItemQueries = {
+            url: query.url, queries: []
+          }
+          const itemQueries =
+            queriesByItem.get(query.itemIndex) || defaultItemQueries
+          itemQueries.queries.push(query)
+          queriesByItem.set(query.itemIndex, itemQueries)
+          queriesByType.set(query.type, queriesByItem)
         }
       }
     }
@@ -292,20 +307,13 @@ export class Bot {
    */
   private actionToQuery (
     state: State, action: BaseAction): ModelQuery | null {
-    if (!isAddLabelAction(action)) {
+    if (!isIndexableAction(action)) {
       return null
     }
 
-    // TODO- define an action type for having item indeices
     const itemIndex = action.itemIndices[0]
     const item = state.task.items[itemIndex]
     const url = Object.values(item.urls)[0]
     return this.modelInterface.actionToQuery(action, url, itemIndex)
   }
 }
-
-// For each action, separate list -> separate models
-// convert action --> args of infer (images, boxes, polys)
-// still set empty args for convenience
-// directly to req, or bdd format?
-// map from url to list of queries (labelexport)

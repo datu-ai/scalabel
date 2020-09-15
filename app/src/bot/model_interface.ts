@@ -1,10 +1,18 @@
 import { addPolygon2dLabel } from '../action/polygon2d'
+import { ADD_LABELS } from '../const/action'
 import { ShapeTypeName } from '../const/common'
 import { makeLabelExport, makeSimplePathPoint2D } from '../functional/states'
 import { convertPolygonToExport } from '../server/export'
-import { AddLabelsAction } from '../types/action'
+import { AddLabelsAction, BaseAction } from '../types/action'
 import { ModelQuery, QueryType } from '../types/bot'
 import { PathPoint2DType, PathPointType, RectType } from '../types/state'
+
+/**
+ * Type guard for add labels actions
+ */
+function isAddLabelAction (action: BaseAction): action is AddLabelsAction {
+  return action.type === ADD_LABELS
+}
 
 /**
  * API between redux style data and data for the models
@@ -26,7 +34,10 @@ export class ModelInterface {
    * If action is not handled, returns null
    */
   public actionToQuery (
-    action: AddLabelsAction, url: string, itemIndex: number) {
+    action: BaseAction, url: string, itemIndex: number) {
+    if (!isAddLabelAction(action)) {
+      return null
+    }
     const shapeType = action.shapes[0][0][0].shapeType
     const shapes = action.shapes[0][0]
     const labelType = action.labels[0][0].type
