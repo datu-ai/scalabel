@@ -113,10 +113,11 @@ export function getDummyModelResult (
       }
       segmentation.addPolygons(polygon)
     }
+    segmentations.push(segmentation)
   }
-
   const result = new protoMessages.InferenceResponse()
   result.setInstanceSegmentationResultList(segmentations)
+  result.setMessage('success')
   return result
 }
 

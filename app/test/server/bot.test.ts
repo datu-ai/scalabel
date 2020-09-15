@@ -8,7 +8,7 @@ import { index2str } from '../../src/common/util'
 import { EventName } from '../../src/const/connection'
 import { serverConfig } from '../../src/server/defaults'
 import { AddLabelsAction } from '../../src/types/action'
-import { BotData } from '../../src/types/bot'
+import { BotData, ModelType } from '../../src/types/bot'
 import {
   ActionPacketType, RegisterMessageType,
   SyncActionMessageType
@@ -32,7 +32,7 @@ let projectName: string
 let initialState: State
 let deploymentClient: DeploymentClient
 
-beforeAll(() => {
+beforeAll(async () => {
   io.connect = jest.fn().mockImplementation(() => mockSocket)
   projectName = 'testProject'
   botData = {
@@ -44,7 +44,22 @@ beforeAll(() => {
   webId = 'fakeUserId'
   initialState = getInitialState(webId)
   const stub = makeStub(serverConfig.bot)
-
+  stub.deployModel = jest.fn().mockImplementation((
+    _req: protoMessages.DeployRequest,
+    callback: (
+      error: Error | null, result: protoMessages.DeployResponse
+    ) => void) => {
+    callback(null, new protoMessages.DeployResponse())
+  })
+  stub.createDeploymentTask = jest.fn().mockImplementation((
+    _req: protoMessages.CreateDeploymentTaskRequest,
+    callback: (
+      error: Error | null, result: protoMessages.CreateDeploymentTaskResponse
+    ) => void) => {
+    const resp = new protoMessages.CreateDeploymentTaskResponse()
+    resp.setDeploymentTaskId('testDeployId')
+    callback(null, resp)
+  })
   /**
    * Mock request to deployment server
    * Should return the same number of predictions as requests
@@ -54,10 +69,11 @@ beforeAll(() => {
     callback: (
       error: Error | null, result: protoMessages.InferenceResponse) => void
   ) => {
-    const result = getDummyModelResult(request)
-    callback(null, result)
+    const resp = getDummyModelResult(request)
+    callback(null, resp)
   })
   deploymentClient = new DeploymentClient(stub)
+  await deploymentClient.deployModel(ModelType.INSTANCE_SEGMENTATION)
 })
 
 // Note that these tests are similar to the frontend tests for synchronizer

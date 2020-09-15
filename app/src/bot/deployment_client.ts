@@ -141,6 +141,7 @@ export class DeploymentClient {
       labelList.map((label) => label.box2d)
     ))
     req.setBoxListsList(protoBoxList)
+
     return new Promise((resolve, reject) => {
       this.stub.performInference(req, (
         err: Error | null, result: messages.InferenceResponse) => {
