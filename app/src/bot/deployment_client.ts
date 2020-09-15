@@ -1,7 +1,7 @@
 import * as grpc from 'grpc'
 import logger from '../server/logger'
 import { Box2DType, LabelExport } from '../types/bdd'
-import { ModelType } from '../types/bot'
+import { ModelType, QueryType } from '../types/bot'
 import { BotConfig } from '../types/config'
 import * as common from './proto_gen/commons_pb.js'
 import * as services from './proto_gen/model_deployment_service_grpc_pb.js'
@@ -32,6 +32,23 @@ function boxListToProto (boxList: Array<Box2DType | null>): messages.BoxList {
 }
 
 /**
+ * Parse the instance segmentation result into a list of polygons
+ * Each polygon is a list of points
+ */
+export function parseInstanceSegmentationRes (
+  resp: messages.InstanceSegmentationResult): number[][][] {
+  const polygons: number[][][] = []
+  resp.getPolygonsList().forEach((protoPoly) => {
+    const polygon: number[][] = []
+    protoPoly.getPointsList().forEach((protoPoint) => {
+      polygon.push([protoPoint.getX(), protoPoint.getY()])
+    })
+    polygons.push(polygon)
+  })
+  return polygons
+}
+
+/**
  * Manages interface to Model Deployment Service
  */
 export class DeploymentClient {
@@ -41,6 +58,8 @@ export class DeploymentClient {
   protected modelTypeToDeployID: Map<ModelType, string>
   /** Map from model type to proto enum type */
   protected modelTypeToProto: Map<ModelType, common.TaskType>
+  /** Map from query type to model type */
+  protected queryTypeToModel: Map<QueryType, ModelType>
 
   constructor (config: BotConfig) {
     this.stub = new services.DeploymentServiceClient(
@@ -52,6 +71,13 @@ export class DeploymentClient {
       common.TaskType.INSTANCE_SEGMENTATION)
     this.modelTypeToProto.set(ModelType.OBJECT_DETECTION_2D,
       common.TaskType.OBJECT_DETECTION_2D)
+
+    this.queryTypeToModel = new Map()
+    this.queryTypeToModel.set(
+      QueryType.PREDICT_POLY, ModelType.INSTANCE_SEGMENTATION)
+    this.queryTypeToModel.set(
+      QueryType.REFINE_POLY, ModelType.INSTANCE_SEGMENTATION
+    )
   }
 
   /**
@@ -86,9 +112,15 @@ export class DeploymentClient {
    * Run inference on a deployed model
    */
   public async infer (
-    modelType: ModelType, urlList: string[],
+    queryType: QueryType, urlList: string[],
     labelLists: LabelExport[][]):
     Promise<messages.InferenceResponse> {
+    const modelType = this.queryTypeToModel.get(queryType)
+    if (modelType === undefined) {
+      return Promise.reject(
+        Error(`${queryType.toString()} query not supported.`)
+      )
+    }
     const deployId = this.modelTypeToDeployID.get(modelType)
     if (deployId === undefined) {
       return Promise.reject(

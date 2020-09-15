@@ -136,8 +136,7 @@ export class BotManager {
   private makeBot (botData: BotData): Bot {
     Logger.info(
       `Creating bot for project ${botData.projectName}, task ${botData.taskIndex}`)
-    const bot = new Bot(
-      this.deploymentClient, botData, this.config.host, this.config.port)
+    const bot = new Bot(this.deploymentClient, botData)
 
     const pollId = setInterval(async () => {
       await this.monitorActivity(bot, pollId)

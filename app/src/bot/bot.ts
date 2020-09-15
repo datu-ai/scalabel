@@ -1,21 +1,20 @@
-import axios, { AxiosRequestConfig } from 'axios'
 import io from 'socket.io-client'
 import { configureStore } from '../common/configure_store'
 import { uid } from '../common/uid'
 import { index2str } from '../common/util'
 import { EventName } from '../const/connection'
 import Logger from '../server/logger'
-import { getPyConnFailedMsg } from '../server/util'
+import { getGRPCConnFailedMsg } from '../server/util'
 import { AddLabelsAction, BaseAction, ItemIndexable } from '../types/action'
 import { LabelExport } from '../types/bdd'
 import { BotData, ItemQueries, ModelQuery,
-  ModelType, QueriesByItem, QueriesByType } from '../types/bot'
+  QueriesByItem, QueriesByType } from '../types/bot'
 import {
   ActionPacketType, RegisterMessageType, SyncActionMessageType
 } from '../types/message'
 import { ReduxStore } from '../types/redux'
 import { State } from '../types/state'
-import { DeploymentClient } from './deployment_client'
+import { DeploymentClient, parseInstanceSegmentationRes } from './deployment_client'
 import { ModelInterface } from './model_interface'
 
 /**
@@ -49,20 +48,15 @@ export class Bot {
   protected actionLog: BaseAction[]
   /** Log of packets that have been acked */
   protected ackedPackets: Set<string>
-  /** address of model server */
-  protected modelAddress: URL
   /** interface with model data type */
   protected modelInterface: ModelInterface
-  /** the axios http config */
-  protected axiosConfig: AxiosRequestConfig
   /** Number of actions received via broadcast */
   private actionCount: number
   /** The deployment client for the models */
   private deploymentClient: DeploymentClient
 
   constructor (
-    deploymentClient: DeploymentClient, botData: BotData,
-    botHost: string, botPort: number) {
+    deploymentClient: DeploymentClient, botData: BotData) {
     this.deploymentClient = deploymentClient
     this.projectName = botData.projectName
     this.taskIndex = botData.taskIndex
@@ -89,16 +83,7 @@ export class Bot {
     this.actionLog = []
     this.ackedPackets = new Set()
 
-    this.modelAddress = new URL(botHost)
-    this.modelAddress.port = botPort.toString()
-
     this.modelInterface = new ModelInterface(this.projectName, this.sessionId)
-
-    this.axiosConfig = {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }
   }
 
   /**
@@ -230,38 +215,34 @@ export class Bot {
   private async executeQueries (
     queriesByType: QueriesByType):
     Promise<AddLabelsAction[]> {
-    // TODO- remove
-    if (this.actionCount > 100) {
-      await this.deploymentClient.infer(ModelType.OBJECT_DETECTION_2D)
-    }
     const actions: AddLabelsAction[] = []
     // TODO: currently waits for each endpoint sequentially, can parallelize
-    for (const [endpoint, queriesByItem] of queriesByType) {
-      const modelEndpoint = new URL(endpoint, this.modelAddress)
-      const sendData: LabelExport[] = []
+    for (const [queryType, queriesByItem] of queriesByType) {
       const itemIndices: number[] = []
-      for (const itemQueries of queriesByItem.values()) {
-        for (const query of itemQueries.queries) {
-          sendData.push(query.label)
-          itemIndices.push(query.itemIndex)
-        }
+      const urls: string[] = []
+      const labelLists: LabelExport[][] = []
+      for (const [itemIndex, itemQuery] of queriesByItem) {
+        itemIndices.push(itemIndex)
+        urls.push(itemQuery.url)
+        labelLists.push(itemQuery.queries.map((query) => query.label))
       }
-
       try {
-        const response = await axios.post(
-          modelEndpoint.toString(), sendData, this.axiosConfig
-        )
+        const resp = await this.deploymentClient.infer(
+          queryType, urls, labelLists)
         Logger.info(
-          `Got a ${response.status.toString()} response from the model with data: ${response.data.points}`)
-        const receiveData: number[][][] = response.data.points
-        receiveData.forEach((polyPoints: number[][], index: number) => {
-          const action = this.modelInterface.makePolyAction(
-            polyPoints, itemIndices[index]
-          )
-          actions.push(action)
-        })
+          `Got a ${resp.getMessage()} response from the model`)
+        resp.getInstanceSegmentationResultList().forEach(
+          (segmentationResult, index: number) => {
+            const polygons = parseInstanceSegmentationRes(segmentationResult)
+            polygons.forEach((polyPoints: number[][]) => {
+              const action = this.modelInterface.makePolyAction(
+                polyPoints, itemIndices[index]
+              )
+              actions.push(action)
+            })
+          })
       } catch (e) {
-        Logger.info(getPyConnFailedMsg(modelEndpoint.toString(), e.message))
+        Logger.info(getGRPCConnFailedMsg(queryType.toString(), e.message))
       }
     }
     return actions
