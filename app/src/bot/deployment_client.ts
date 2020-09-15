@@ -51,10 +51,19 @@ export function parseInstanceSegmentationRes (
 /**
  * Create a new grpc stub connection
  */
-export function makeStub (config: BotConfig) {
-  return new services.DeploymentServiceClient(
-    `${config.host}:${config.port}`, grpc.credentials.createInsecure()
-  )
+export function makeStub (config: BotConfig):
+  services.DeploymentServiceClient | null {
+  const address = `${config.host}:${config.port}`
+  logger.info(`Trying to connect to grpc server at ${address}`)
+  try {
+    const client = new services.DeploymentServiceClient(
+      address, grpc.credentials.createInsecure()
+    )
+    return client
+  } catch (e) {
+    logger.error(e)
+    return null
+  }
 }
 
 /**

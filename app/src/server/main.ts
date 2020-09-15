@@ -100,6 +100,9 @@ async function makeBotManager (
   config: ServerConfig, subscriber: RedisPubSub, cacheClient: RedisClient) {
   if (config.bot.on) {
     const stub = makeStub(config.bot)
+    if (!stub) {
+      return
+    }
     const deploymentClient = new DeploymentClient(stub)
     await deploymentClient.deployModel(ModelType.INSTANCE_SEGMENTATION)
 
