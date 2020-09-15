@@ -1,8 +1,8 @@
 import { ModelInterface } from '../../src/bot/model_interface'
 import { LabelTypeName } from '../../src/const/common'
-import { ModelEndpoint } from '../../src/const/connection'
 import { makePathPoint2D, makeRect } from '../../src/functional/states'
 import { convertPolygonToExport } from '../../src/server/export'
+import { QueryType } from '../../src/types/bot'
 import { PathPoint2DType, PathPointType, RectType } from '../../src/types/state'
 
 let modelInterface: ModelInterface
@@ -24,7 +24,7 @@ describe('test model interface query construction', () => {
     })
     const itemIndex = 1
     const query = modelInterface.makeRectQuery(rect, url, itemIndex)
-    expect(query.endpoint).toBe(ModelEndpoint.PREDICT_POLY)
+    expect(query.type).toBe(QueryType.PREDICT_POLY)
     expect(query.itemIndex).toBe(itemIndex)
     expect(query.url).toBe(url)
     expect(query.label.box2d).toEqual(rect)
@@ -39,7 +39,7 @@ describe('test model interface query construction', () => {
     const labelType = LabelTypeName.POLYGON_2D
     const query = modelInterface.makePolyQuery(
       points, url, itemIndex, labelType)
-    expect(query.endpoint).toBe(ModelEndpoint.REFINE_POLY)
+    expect(query.type).toBe(QueryType.REFINE_POLY)
     expect(query.itemIndex).toBe(itemIndex)
     expect(query.url).toBe(url)
 

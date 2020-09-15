@@ -9,8 +9,9 @@ import { EventName } from '../../src/const/connection'
 import { serverConfig } from '../../src/server/defaults'
 import { AddLabelsAction } from '../../src/types/action'
 import { ItemExport } from '../../src/types/bdd'
+import { BotData } from '../../src/types/bot'
 import {
-  ActionPacketType, BotData, RegisterMessageType,
+  ActionPacketType, RegisterMessageType,
   SyncActionMessageType
 } from '../../src/types/message'
 import { ReduxStore } from '../../src/types/redux'
@@ -180,7 +181,7 @@ describe('Test bot send-ack loop', () => {
 /**
  * Creates the bot and initializes its store using the register handler
  */
-function setUpBot() {
+function setUpBot () {
   const bot = new Bot(deploymentClient, botData, host, port)
   bot.registerAckHandler(initialState)
   return bot
@@ -190,7 +191,7 @@ function setUpBot() {
  * Helper function to update the expected store with
  * the incoming actions and the outgoing predictions
  */
-function updateExpectedStore(
+function updateExpectedStore (
   store: ReduxStore, message: SyncActionMessageType,
   botActions: AddLabelsAction[]) {
   // Apply incoming actions
@@ -205,7 +206,7 @@ function updateExpectedStore(
 /**
  * Helper function for checking that correct connection message was sent
  */
-function checkConnectMessage(sessId: string) {
+function checkConnectMessage (sessId: string) {
   const expectedMessage: RegisterMessageType = {
     projectName: botData.projectName,
     taskIndex: botData.taskIndex,
@@ -220,7 +221,7 @@ function checkConnectMessage(sessId: string) {
 /**
  * Create a sync message with the specified number of actions
  */
-function makeSyncMessage(
+function makeSyncMessage (
   numActions: number, userId: string): SyncActionMessageType {
   const actions: AddLabelsAction[] = []
   for (let _ = 0; _ < numActions; _++) {
@@ -236,7 +237,7 @@ function makeSyncMessage(
 /**
  * Convert action packet to sync message
  */
-function packetToMessage(
+function packetToMessage (
   packet: ActionPacketType, sessionId: string): SyncActionMessageType {
   return {
     actions: packet,

@@ -1,10 +1,35 @@
 import * as grpc from 'grpc'
 import logger from '../server/logger'
+import { Box2DType, LabelExport } from '../types/bdd'
 import { ModelType } from '../types/bot'
 import { BotConfig } from '../types/config'
 import * as common from './proto_gen/commons_pb.js'
 import * as services from './proto_gen/model_deployment_service_grpc_pb.js'
 import * as messages from './proto_gen/model_deployment_service_pb.js'
+
+/**
+ * Convert a box list in BDD format to a proto
+ */
+function boxListToProto (boxList: Array<Box2DType | null>): messages.BoxList {
+  const protoBoxList = new messages.BoxList()
+  boxList.forEach((box) => {
+    if (!box) {
+      return
+    }
+    const protoBox = new messages.Box()
+    const bottomLeft = new messages.Point()
+    bottomLeft.setX(box.x1)
+    bottomLeft.setY(box.y1)
+    const topRight = new messages.Point()
+    topRight.setX(box.x2)
+    topRight.setY(box.y2)
+
+    protoBox.setBottomLeft(bottomLeft)
+    protoBox.setTopRight(topRight)
+    protoBoxList.addBoxes(protoBox)
+  })
+  return protoBoxList
+}
 
 /**
  * Manages interface to Model Deployment Service
@@ -60,7 +85,9 @@ export class DeploymentClient {
   /**
    * Run inference on a deployed model
    */
-  public async infer (modelType: ModelType):
+  public async infer (
+    modelType: ModelType, urlList: string[],
+    labelLists: LabelExport[][]):
     Promise<messages.InferenceResponse> {
     const deployId = this.modelTypeToDeployID.get(modelType)
     if (deployId === undefined) {
@@ -70,7 +97,11 @@ export class DeploymentClient {
     const req = new messages.InferenceRequest()
     req.setProjectId('abcde12345')
     req.setDeploymentTaskId(deployId)
-    req.setUrlListList(['https://datusagemaker.s3-us-west-2.amazonaws.com/toy/000000.png'])
+    req.setUrlListList(urlList)
+    const protoBoxList = labelLists.map((labelList) => boxListToProto(
+      labelList.map((label) => label.box2d)
+    ))
+    req.setBoxListsList(protoBoxList)
     return new Promise((resolve, reject) => {
       this.stub.performInference(req, (
         err: Error | null, result: messages.InferenceResponse) => {
