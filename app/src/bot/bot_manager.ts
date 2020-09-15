@@ -3,9 +3,9 @@ import Logger from '../server/logger'
 import { getRedisBotKey, getRedisBotSet } from '../server/path'
 import { RedisClient } from '../server/redis_client'
 import { RedisPubSub } from '../server/redis_pub_sub'
+import { BotData } from '../types/bot'
 import { BotConfig } from '../types/config'
 import {
-  BotData,
   RegisterMessageType} from '../types/message'
 import { Bot } from './bot'
 import { DeploymentClient } from './deployment_client'

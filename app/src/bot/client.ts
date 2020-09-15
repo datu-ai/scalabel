@@ -1,4 +1,5 @@
-import { DeploymentClient, ModelType } from './deployment_client'
+import { ModelType } from '../types/bot'
+import { DeploymentClient } from './deployment_client'
 
 /**
  * Set up and perform inference

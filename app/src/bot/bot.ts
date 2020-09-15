@@ -4,7 +4,6 @@ import { configureStore } from '../common/configure_store'
 import { uid } from '../common/uid'
 import { index2str } from '../common/util'
 import { ADD_LABELS } from '../const/action'
-import { ShapeTypeName } from '../const/common'
 import { EventName } from '../const/connection'
 import Logger from '../server/logger'
 import { getPyConnFailedMsg } from '../server/util'
@@ -15,7 +14,7 @@ import {
   ActionPacketType, RegisterMessageType, SyncActionMessageType
 } from '../types/message'
 import { ReduxStore } from '../types/redux'
-import { PathPoint2DType, RectType, State } from '../types/state'
+import { State } from '../types/state'
 import { DeploymentClient } from './deployment_client'
 import { ModelInterface } from './model_interface'
 
@@ -296,25 +295,12 @@ export class Bot {
     if (!isAddLabelAction(action)) {
       return null
     }
-    const shapeType = action.shapes[0][0][0].shapeType
-    const shapes = action.shapes[0][0]
-    const labelType = action.labels[0][0].type
+
+    // TODO- define an action type for having item indeices
     const itemIndex = action.itemIndices[0]
     const item = state.task.items[itemIndex]
     const url = Object.values(item.urls)[0]
-
-    switch (shapeType) {
-      case ShapeTypeName.RECT:
-        return this.modelInterface.makeRectQuery(
-          shapes[0] as RectType, url, itemIndex
-        )
-      case ShapeTypeName.POLYGON_2D:
-        return this.modelInterface.makePolyQuery(
-          shapes as PathPoint2DType[], url, itemIndex, labelType
-        )
-      default:
-        return null
-    }
+    return this.modelInterface.actionToQuery(action, url, itemIndex)
   }
 }
 
