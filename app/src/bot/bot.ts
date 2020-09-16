@@ -15,8 +15,9 @@ import {
 } from '../types/message'
 import { ReduxStore } from '../types/redux'
 import { State } from '../types/state'
-import { DeploymentClient, parseInstanceSegmentationRes } from './deployment_client'
+import { DeploymentClient } from './deployment_client'
 import { ModelInterface } from './model_interface'
+import { parseInstanceSegmentationResult } from './proto_utils'
 
 /**
  * Type guard for actions that affect indices
@@ -239,7 +240,7 @@ export class Bot {
           `Got a ${resp.getMessage()} response from the model`)
         resp.getInstanceSegmentationResultList().forEach(
           (segmentationResult, index: number) => {
-            const polygons = parseInstanceSegmentationRes(segmentationResult)
+            const polygons = parseInstanceSegmentationResult(segmentationResult)
             polygons.forEach((polyPoints: number[][]) => {
               const action = this.modelInterface.makePolyAction(
                 polyPoints, itemIndices[index]

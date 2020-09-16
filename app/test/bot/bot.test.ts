@@ -2,6 +2,7 @@ import io from 'socket.io-client'
 import { Bot } from '../../src/bot/bot'
 import { DeploymentClient, makeStub } from '../../src/bot/deployment_client'
 import * as protoMessages from '../../src/bot/proto_gen/model_deployment_service_pb.js'
+import { getDummyModelResult } from '../../src/bot/proto_utils'
 import { configureStore } from '../../src/common/configure_store'
 import { uid } from '../../src/common/uid'
 import { index2str } from '../../src/common/util'
@@ -16,7 +17,7 @@ import {
 import { ReduxStore } from '../../src/types/redux'
 import { State } from '../../src/types/state'
 import {
-  getDummyModelResult, getInitialState,
+  getInitialState,
   getRandomBox2dAction
 } from '../server/util/util'
 

@@ -1,52 +1,12 @@
 import * as grpc from 'grpc'
 import logger from '../server/logger'
-import { Box2DType, LabelExport } from '../types/bdd'
+import { LabelExport } from '../types/bdd'
 import { ModelType, QueryType } from '../types/bot'
 import { BotConfig } from '../types/config'
 import * as common from './proto_gen/commons_pb.js'
 import * as services from './proto_gen/model_deployment_service_grpc_pb.js'
 import * as messages from './proto_gen/model_deployment_service_pb.js'
-
-/**
- * Convert a box list in BDD format to a proto
- */
-function boxListToProto (boxList: Array<Box2DType | null>): messages.BoxList {
-  const protoBoxList = new messages.BoxList()
-  boxList.forEach((box) => {
-    if (!box) {
-      return
-    }
-    const protoBox = new messages.Box()
-    const bottomLeft = new messages.Point()
-    bottomLeft.setX(box.x1)
-    bottomLeft.setY(box.y1)
-    const topRight = new messages.Point()
-    topRight.setX(box.x2)
-    topRight.setY(box.y2)
-
-    protoBox.setBottomLeft(bottomLeft)
-    protoBox.setTopRight(topRight)
-    protoBoxList.addBoxes(protoBox)
-  })
-  return protoBoxList
-}
-
-/**
- * Parse the instance segmentation result into a list of polygons
- * Each polygon is a list of points
- */
-export function parseInstanceSegmentationRes (
-  resp: messages.InstanceSegmentationResult): number[][][] {
-  const polygons: number[][][] = []
-  resp.getPolygonsList().forEach((protoPoly) => {
-    const polygon: number[][] = []
-    protoPoly.getPointsList().forEach((protoPoint) => {
-      polygon.push([protoPoint.getX(), protoPoint.getY()])
-    })
-    polygons.push(polygon)
-  })
-  return polygons
-}
+import { boxListToProto } from './proto_utils'
 
 /**
  * Create a new grpc stub connection
