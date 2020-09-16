@@ -1,11 +1,12 @@
 import io from 'socket.io-client'
+import { deleteLabels } from '../action/common'
 import { configureStore } from '../common/configure_store'
 import { uid } from '../common/uid'
 import { index2str } from '../common/util'
 import { EventName } from '../const/connection'
 import Logger from '../server/logger'
 import { getGRPCConnFailedMsg } from '../server/util'
-import { AddLabelsAction, BaseAction, ItemIndexable } from '../types/action'
+import { AddLabelsAction, BaseAction, DeleteLabelsAction, ItemIndexable } from '../types/action'
 import { LabelExport } from '../types/bdd'
 import { BotData, ItemQueries, ModelQuery,
   QueriesByItem, QueriesByType } from '../types/bot'
@@ -25,6 +26,8 @@ function isIndexableAction (action: BaseAction):
   // tslint:disable-next-line: strict-type-predicates
   return (action as unknown as ItemIndexable).itemIndices !== undefined
 }
+
+type BotAction = AddLabelsAction | DeleteLabelsAction
 
 /**
  * Manages virtual sessions for a single bot
@@ -116,7 +119,7 @@ export class Bot {
    * Simply logs these actions for now
    */
   public async actionBroadcastHandler (
-    message: SyncActionMessageType): Promise<AddLabelsAction[]> {
+    message: SyncActionMessageType): Promise<BotAction[]> {
     const actionPacket = message.actions
     // If action was already acked, or if action came from a bot, ignore it
     if (this.ackedPackets.has(actionPacket.id)
@@ -151,7 +154,7 @@ export class Bot {
    * Broadcast the synthetically generated actions
    */
   public broadcastActions (
-    actions: AddLabelsAction[], triggerId: string) {
+    actions: BotAction[], triggerId: string) {
     const actionPacket: ActionPacketType = {
       actions,
       id: uid(),
@@ -214,17 +217,20 @@ export class Bot {
    */
   private async executeQueries (
     queriesByType: QueriesByType):
-    Promise<AddLabelsAction[]> {
-    const actions: AddLabelsAction[] = []
+    Promise<BotAction[]> {
+    const actions: BotAction[] = []
     // TODO: currently waits for each endpoint sequentially, can parallelize
     for (const [queryType, queriesByItem] of queriesByType) {
       const itemIndices: number[] = []
       const urls: string[] = []
       const labelLists: LabelExport[][] = []
+      const labelIds: string[][] = []
       for (const [itemIndex, itemQuery] of queriesByItem) {
         itemIndices.push(itemIndex)
         urls.push(itemQuery.url)
         labelLists.push(itemQuery.queries.map((query) => query.label))
+        labelIds.push(
+          itemQuery.queries.map((query) => query.label.id as string))
       }
       try {
         const resp = await this.deploymentClient.infer(
@@ -239,8 +245,10 @@ export class Bot {
                 polyPoints, itemIndices[index]
               )
               actions.push(action)
+
             })
           })
+        actions.push(deleteLabels(itemIndices, labelIds))
       } catch (e) {
         Logger.info(getGRPCConnFailedMsg(queryType.toString(), e.message))
       }

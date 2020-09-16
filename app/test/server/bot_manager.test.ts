@@ -1,11 +1,12 @@
 import _ from 'lodash'
 import { BotManager } from '../../src/bot/bot_manager'
-import { DeploymentClient } from '../../src/bot/deployment_client'
+import { DeploymentClient, makeStub } from '../../src/bot/deployment_client'
 import { getRedisBotKey } from '../../src/server/path'
 import { RedisClient } from '../../src/server/redis_client'
 import { RedisPubSub } from '../../src/server/redis_pub_sub'
+import { BotData } from '../../src/types/bot'
 import { ServerConfig } from '../../src/types/config'
-import { BotData, RegisterMessageType } from '../../src/types/message'
+import { RegisterMessageType } from '../../src/types/message'
 import { sleep } from '../project/util'
 import { getTestConfig } from './util/util'
 
@@ -20,7 +21,11 @@ beforeAll(async () => {
   client = new RedisClient(config.redis)
   subClient = new RedisClient(config.redis)
   subscriber = new RedisPubSub(subClient)
-  deploymentClient = new DeploymentClient(config.bot)
+  const stub = makeStub(config.bot)
+  if (!stub) {
+    return
+  }
+  deploymentClient = new DeploymentClient(stub)
 })
 
 afterAll(async () => {

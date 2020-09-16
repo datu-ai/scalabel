@@ -23,7 +23,7 @@ describe('test model interface query construction', () => {
       x1: 5, y1: 2, x2: 6, y2: 10
     })
     const itemIndex = 1
-    const query = modelInterface.makeRectQuery(rect, url, itemIndex)
+    const query = modelInterface.makeRectQuery(rect, url, itemIndex, rect.id)
     expect(query.type).toBe(QueryType.PREDICT_POLY)
     expect(query.itemIndex).toBe(itemIndex)
     expect(query.url).toBe(url)
@@ -38,7 +38,8 @@ describe('test model interface query construction', () => {
     const itemIndex = 0
     const labelType = LabelTypeName.POLYGON_2D
     const query = modelInterface.makePolyQuery(
-      points, url, itemIndex, labelType)
+      points, url, itemIndex, points[0].id, labelType
+    )
     expect(query.type).toBe(QueryType.REFINE_POLY)
     expect(query.itemIndex).toBe(itemIndex)
     expect(query.url).toBe(url)

@@ -7,7 +7,7 @@ import { uid } from '../../src/common/uid'
 import { index2str } from '../../src/common/util'
 import { EventName } from '../../src/const/connection'
 import { serverConfig } from '../../src/server/defaults'
-import { AddLabelsAction } from '../../src/types/action'
+import { AddLabelsAction, DeleteLabelsAction } from '../../src/types/action'
 import { BotData, ModelType } from '../../src/types/bot'
 import {
   ActionPacketType, RegisterMessageType,
@@ -44,6 +44,9 @@ beforeAll(async () => {
   webId = 'fakeUserId'
   initialState = getInitialState(webId)
   const stub = makeStub(serverConfig.bot)
+  if (!stub) {
+    return
+  }
   stub.deployModel = jest.fn().mockImplementation((
     _req: protoMessages.DeployRequest,
     callback: (
@@ -102,8 +105,9 @@ describe('Test bot send-ack loop', () => {
 
     // Send the action packet
     const botActions = await bot.actionBroadcastHandler(message)
+
     expect(bot.getActionCount()).toBe(numActions)
-    expect(botActions.length).toBe(numActions)
+    expect(botActions.length).toBe(numActions + 1)
 
     // Verify that the trigger id is set correctly
     const calls = socketEmit.mock.calls
@@ -122,8 +126,10 @@ describe('Test bot send-ack loop', () => {
 
     // Send the action packet
     let botActions = await bot.actionBroadcastHandler(message)
+
+    // 1 response per action, plus 1 for deletion
     expect(bot.getActionCount()).toBe(numActions)
-    expect(botActions.length).toBe(numActions)
+    expect(botActions.length).toBe(numActions + 1)
 
     // Send the duplicate packet
     botActions = await bot.actionBroadcastHandler(message)
@@ -172,7 +178,7 @@ describe('Test bot send-ack loop', () => {
 
       totalActions += numActions
       expect(bot.getActionCount()).toBe(totalActions)
-      expect(botActions.length).toBe(numActions)
+      expect(botActions.length).toBe(numActions + 1)
     }
 
     // Check the final store
@@ -199,7 +205,7 @@ function setUpBot () {
  */
 function updateExpectedStore (
   store: ReduxStore, message: SyncActionMessageType,
-  botActions: AddLabelsAction[]) {
+  botActions: Array<AddLabelsAction | DeleteLabelsAction>) {
   // Apply incoming actions
   for (const action of message.actions.actions) {
     store.dispatch(action)

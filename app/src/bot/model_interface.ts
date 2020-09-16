@@ -40,15 +40,15 @@ export class ModelInterface {
     }
     const shapeType = action.shapes[0][0][0].shapeType
     const shapes = action.shapes[0][0]
-    const labelType = action.labels[0][0].type
+    const label = action.labels[0][0]
     switch (shapeType) {
       case ShapeTypeName.RECT:
         return this.makeRectQuery(
-          shapes[0] as RectType, url, itemIndex
+          shapes[0] as RectType, url, itemIndex, label.id
         )
       case ShapeTypeName.POLYGON_2D:
         return this.makePolyQuery(
-          shapes as PathPoint2DType[], url, itemIndex, labelType
+          shapes as PathPoint2DType[], url, itemIndex, label.id, label.type
         )
       default:
         return null
@@ -76,9 +76,10 @@ export class ModelInterface {
    * Query for 'rect -> polygon' segmentation
    */
   public makeRectQuery (
-    rect: RectType, url: string, itemIndex: number): ModelQuery {
+    rect: RectType, url: string, itemIndex: number, id: string): ModelQuery {
     const label = makeLabelExport({
-      box2d: rect
+      box2d: rect,
+      id
     })
 
     return {
@@ -94,10 +95,11 @@ export class ModelInterface {
    */
   public makePolyQuery (
     points: PathPoint2DType[], url: string,
-    itemIndex: number, labelType: string): ModelQuery {
+    itemIndex: number, id: string, labelType: string): ModelQuery {
     const poly2d = convertPolygonToExport(points, labelType)
     const label = makeLabelExport({
-      poly2d
+      poly2d,
+      id
     })
     return {
       label,

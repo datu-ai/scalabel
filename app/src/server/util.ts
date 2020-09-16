@@ -252,7 +252,8 @@ export function parseProjectName (projectName: string): string {
 /**
  * Get connection failed error message for grpc request to deployment server
  */
-export function getGRPCConnFailedMsg (endpoint: string, message: string): string {
+export function getGRPCConnFailedMsg (
+  endpoint: string, message: string): string {
   return `Make sure endpoint is correct and grpc server is \
 running; query to \"${endpoint}\" failed with message: ${message}`
 }

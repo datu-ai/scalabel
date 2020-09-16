@@ -194,7 +194,7 @@ export class DeploymentClient {
    * Finish the deployment
    */
   private async finishDeployment (deployId: string):
-    Promise<messages.DeployResponse>  {
+    Promise<messages.DeployResponse> {
     const req = new messages.DeployRequest()
     req.setProjectId('abcde12345')
     req.setNumGpus(1)
