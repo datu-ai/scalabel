@@ -34,10 +34,10 @@ function getDummyModelResult (
  * Mock the GRPC endpoints for a full test
  */
 export function makeMockGRPCStub (
-  botConfig: BotConfig): DeploymentServiceClient {
+  botConfig: BotConfig): DeploymentServiceClient | null {
   const stub = makeStub(botConfig)
   if (!stub) {
-    return
+    return null
   }
 
   // For task creation, just call the callback with the deploy id

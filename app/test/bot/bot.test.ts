@@ -45,6 +45,9 @@ beforeAll(async () => {
   initialState = getInitialState(webId)
 
   const stub = makeMockGRPCStub(serverConfig.bot)
+  if (!stub) {
+    return
+  }
   deploymentClient = new DeploymentClient(stub)
   await deploymentClient.deployModel(ModelType.INSTANCE_SEGMENTATION)
 })
