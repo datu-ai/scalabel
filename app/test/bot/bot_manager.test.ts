@@ -8,7 +8,7 @@ import { BotData } from '../../src/types/bot'
 import { ServerConfig } from '../../src/types/config'
 import { RegisterMessageType } from '../../src/types/message'
 import { sleep } from '../project/util'
-import { getTestConfig } from './util/util'
+import { getTestConfig } from '../server/util/util'
 
 let client: RedisClient
 let subClient: RedisClient

@@ -18,7 +18,7 @@ import { State } from '../../src/types/state'
 import {
   getDummyModelResult, getInitialState,
   getRandomBox2dAction
-} from './util/util'
+} from '../server/util/util'
 
 let botData: BotData
 const socketEmit = jest.fn()
