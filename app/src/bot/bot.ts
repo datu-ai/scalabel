@@ -7,7 +7,7 @@ import { EventName } from '../const/connection'
 import Logger from '../server/logger'
 import { getGRPCConnFailedMsg } from '../server/util'
 import { AddLabelsAction, BaseAction, DeleteLabelsAction } from '../types/action'
-import { BotData, ItemQueries, QueriesByItem, QueriesByType } from '../types/bot'
+import { BotData } from '../types/bot'
 import {
   ActionPacketType, RegisterMessageType, SyncActionMessageType
 } from '../types/message'
@@ -16,6 +16,7 @@ import { State } from '../types/state'
 import { getQuery, makePolyAction } from './action_converter'
 import { DeploymentClient } from './deployment_client'
 import { parseInstanceSegmentationResult } from './proto_utils'
+import { QueryPreparer } from './query_preparer'
 
 type BotAction = AddLabelsAction | DeleteLabelsAction
 
@@ -23,15 +24,15 @@ type BotAction = AddLabelsAction | DeleteLabelsAction
  * Manages virtual sessions for a single bot
  */
 export class Bot {
-  /** project name */
+  /** Project name */
   public projectName: string
-  /** task index */
+  /** Task index */
   public taskIndex: number
-  /** bot user id */
+  /** Bot user id */
   public botId: string
-  /** an arbitrary session id */
+  /** An arbitrary session id */
   public sessionId: string
-  /** address for session connections */
+  /** Address for session connections */
   public address: string
   /** The store to save state */
   protected store: ReduxStore
@@ -117,10 +118,10 @@ export class Bot {
     this.ackedPackets.add(actionPacket.id)
 
     // Precompute queries so they can potentially execute in parallel
-    const queriesByType = this.packetToQueries(actionPacket)
+    const queryPreparer = this.packetToQueries(actionPacket)
 
     // Send the queries for execution on the deployment server
-    const actions = await this.executeQueries(queriesByType)
+    const actions = await this.executeQueries(queryPreparer)
 
     // Dispatch the predicted actions locally
     for (const action of actions) {
@@ -202,24 +203,17 @@ export class Bot {
    * Batches the queries for each endpoint
    */
   private async executeQueries (
-    queriesByType: QueriesByType):
+    queryPreparer: QueryPreparer):
     Promise<BotAction[]> {
     const actions: BotAction[] = []
     // TODO: currently waits for each endpoint sequentially, can parallelize
-    for (const [queryType, queriesByItem] of queriesByType) {
-      const itemIndices = Array.from(queriesByItem.keys())
-      const itemQueries = Array.from(queriesByItem.values())
-      const urls = itemQueries.map((itemQuery) => itemQuery.url)
-      const labelLists = itemQueries.map((itemQuery) =>
-        itemQuery.queries.map((query) => query.label)
-      )
-      const labelIds = itemQueries.map((itemQuery) =>
-        itemQuery.queries.map((query) => query.label.id as string)
-      )
-
+    for (const queryType of queryPreparer.getQueryTypes()) {
       try {
         const resp = await this.deploymentClient.infer(
-          queryType, urls, labelLists)
+          queryType,
+          queryPreparer.getUrls(queryType),
+          queryPreparer.getLabelLists(queryType)
+        )
         Logger.info(
           `Got a ${resp.getMessage()} response from the model`)
         resp.getInstanceSegmentationResultList().forEach(
@@ -227,11 +221,16 @@ export class Bot {
             parseInstanceSegmentationResult(segmentationResult).forEach(
               (polyPoints: number[][]) => {
                 actions.push(makePolyAction(
-                  polyPoints, itemIndices[index], this.sessionId
+                  polyPoints,
+                  queryPreparer.getItemIndices(queryType)[index],
+                  this.sessionId
                 ))
               })
           })
-        actions.push(deleteLabels(itemIndices, labelIds))
+        actions.push(deleteLabels(
+          queryPreparer.getItemIndices(queryType),
+          queryPreparer.getLabelIds(queryType)
+        ))
       } catch (e) {
         Logger.info(getGRPCConnFailedMsg(queryType.toString(), e.message))
       }
@@ -243,8 +242,8 @@ export class Bot {
    * Compute queries for the actions in the packet
    */
   private packetToQueries (
-    packet: ActionPacketType): QueriesByType {
-    const queriesByType: QueriesByType = new Map()
+    packet: ActionPacketType): QueryPreparer {
+    const queryPreparer = new QueryPreparer()
     for (const action of packet.actions) {
       if (action.sessionId !== this.sessionId) {
         this.actionCount += 1
@@ -254,24 +253,9 @@ export class Bot {
           `Bot received action of type ${action.type}`)
 
         const state = this.store.getState().present
-        const query = getQuery(state, action)
-        if (query) {
-          const defaultQueriesByItem: QueriesByItem = new Map()
-          const queriesByItem =
-            queriesByType.get(query.type) || defaultQueriesByItem
-
-          const defaultItemQueries: ItemQueries = {
-            url: query.url, queries: []
-          }
-          const itemQueries =
-            queriesByItem.get(query.itemIndex) || defaultItemQueries
-
-          itemQueries.queries.push(query)
-          queriesByItem.set(query.itemIndex, itemQueries)
-          queriesByType.set(query.type, queriesByItem)
-        }
+        queryPreparer.addQuery(getQuery(state, action))
       }
     }
-    return queriesByType
+    return queryPreparer
   }
 }
