@@ -13,7 +13,7 @@ import {
 } from '../types/message'
 import { ReduxStore } from '../types/redux'
 import { State } from '../types/state'
-import { ActionConverter } from './action_converter'
+import { getQuery, makePolyAction } from './action_converter'
 import { DeploymentClient } from './deployment_client'
 import { parseInstanceSegmentationResult } from './proto_utils'
 
@@ -41,8 +41,6 @@ export class Bot {
   protected actionLog: BaseAction[]
   /** Log of packets that have been acked */
   protected ackedPackets: Set<string>
-  /** Converter for redux actions */
-  protected actionConverter: ActionConverter
   /** Number of actions received via broadcast */
   private actionCount: number
   /** The deployment client for the models */
@@ -75,8 +73,6 @@ export class Bot {
 
     this.actionLog = []
     this.ackedPackets = new Set()
-
-    this.actionConverter = new ActionConverter(this.projectName)
   }
 
   /**
@@ -230,8 +226,8 @@ export class Bot {
           (segmentationResult, index: number) => {
             parseInstanceSegmentationResult(segmentationResult).forEach(
               (polyPoints: number[][]) => {
-                actions.push(this.actionConverter.makePolyAction(
-                  polyPoints, itemIndices[index]
+                actions.push(makePolyAction(
+                  polyPoints, itemIndices[index], this.sessionId
                 ))
               })
           })
@@ -258,7 +254,7 @@ export class Bot {
           `Bot received action of type ${action.type}`)
 
         const state = this.store.getState().present
-        const query = this.actionConverter.getQuery(state, action)
+        const query = getQuery(state, action)
         if (query) {
           const defaultQueriesByItem: QueriesByItem = new Map()
           const queriesByItem =

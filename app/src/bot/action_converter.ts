@@ -25,85 +25,74 @@ function isAddLabelAction (action: BaseAction): action is AddLabelsAction {
 }
 
 /**
- * Conversion between redux actions and data for the models
+ * Convert action to a query
+ * Only handles box2d/polygon2d actions, so assume a single label/shape/item
+ * If action is not handled, returns null
  */
-export class ActionConverter {
-  /** current session id */
-  public sessionId: string
-
-  constructor (sessionId: string) {
-    this.sessionId = sessionId
+export function getQuery (state: State, action: BaseAction): ModelQuery | null {
+  if (!isIndexableAction(action) || !isAddLabelAction(action)) {
+    return null
   }
-
-  /**
-   * Convert action to a query
-   * Only handles box2d/polygon2d actions, so assume a single label/shape/item
-   * If action is not handled, returns null
-   */
-  public getQuery (state: State, action: BaseAction): ModelQuery | null {
-    if (!isIndexableAction(action) || !isAddLabelAction(action)) {
-      return null
-    }
-    const url = Object.values(
-      state.task.items[action.itemIndices[0]].urls)[0]
-    return this.actionToQuery(action, url)
-  }
+  const url = Object.values(
+    state.task.items[action.itemIndices[0]].urls)[0]
+  return actionToQuery(action, url)
+}
 
   /**
    * Generate BDD data format item corresponding to the action
    * If action is not handled, returns null
    */
-  public actionToQuery (
-    action: AddLabelsAction, url: string): ModelQuery | null {
-    const itemIndex = action.itemIndices[0]
-    const shapes = action.shapes[0][0]
-    const shapeType = shapes[0].shapeType
-    const label = action.labels[0][0]
+export function actionToQuery (
+  action: AddLabelsAction, url: string): ModelQuery | null {
+  const itemIndex = action.itemIndices[0]
+  const shapes = action.shapes[0][0]
+  const shapeType = shapes[0].shapeType
+  const label = action.labels[0][0]
 
-    let labelExport: LabelExport
-    let queryType: QueryType
-    switch (shapeType) {
-      case ShapeTypeName.RECT:
-        labelExport = makeLabelExport({
-          box2d: shapes[0] as RectType,
-          id: label.id
-        })
-        queryType = QueryType.PREDICT_POLY
-        break
-      case ShapeTypeName.PATH_POINT_2D:
-        labelExport = makeLabelExport({
-          poly2d: convertPolygonToExport(
-            shapes as PathPoint2DType[], label.type),
-          id: label.id
-        })
-        queryType = QueryType.REFINE_POLY
-        break
-      default:
-        return null
-    }
-
-    return {
-      url,
-      itemIndex,
-      label: labelExport,
-      type: queryType
-    }
+  let labelExport: LabelExport
+  let queryType: QueryType
+  switch (shapeType) {
+    case ShapeTypeName.RECT:
+      labelExport = makeLabelExport({
+        box2d: shapes[0] as RectType,
+        id: label.id
+      })
+      queryType = QueryType.PREDICT_POLY
+      break
+    case ShapeTypeName.PATH_POINT_2D:
+      labelExport = makeLabelExport({
+        poly2d: convertPolygonToExport(
+          shapes as PathPoint2DType[], label.type),
+        id: label.id
+      })
+      queryType = QueryType.REFINE_POLY
+      break
+    default:
+      return null
   }
 
-  /**
-   * Translate polygon response to an action
-   */
-  public makePolyAction (
-    polyPoints: number[][], itemIndex: number): AddLabelsAction {
-    const points = polyPoints.map((point: number[]) => {
-      return makeSimplePathPoint2D(
-          point[0], point[1], PathPointType.LINE)
-    })
-
-    const action = addPolygon2dLabel(
-      itemIndex, -1, [0], points, true, false
-    )
-    action.sessionId = this.sessionId
-    return action
+  return {
+    url,
+    itemIndex,
+    label: labelExport,
+    type: queryType
   }
+}
+
+/**
+ * Translate polygon response to an action
+ */
+export function makePolyAction (
+  polyPoints: number[][], itemIndex: number,
+  sessionId: string): AddLabelsAction {
+  const points = polyPoints.map((point: number[]) => {
+    return makeSimplePathPoint2D(
+        point[0], point[1], PathPointType.LINE)
+  })
+
+  const action = addPolygon2dLabel(
+    itemIndex, -1, [0], points, true, false
+  )
+  action.sessionId = sessionId
+  return action
 }
