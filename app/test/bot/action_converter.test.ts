@@ -1,22 +1,20 @@
 import { addBox2dLabel } from '../../src/action/box2d'
 import { addPolygon2dLabel } from '../../src/action/polygon2d'
-import { ModelInterface } from '../../src/bot/model_interface'
+import { ActionConverter } from '../../src/bot/action_converter'
 import { LabelTypeName } from '../../src/const/common'
 import { makePathPoint2D, makeRect } from '../../src/functional/states'
 import { convertPolygonToExport } from '../../src/server/export'
 import { QueryType } from '../../src/types/bot'
 import { PathPoint2DType, PathPointType, RectType } from '../../src/types/state'
 
-let modelInterface: ModelInterface
-let projectName: string
+let actionConverter: ActionConverter
 let sessionId: string
 let url: string
 
 beforeAll(() => {
-  projectName = 'projectName'
   sessionId = 'sessionId'
   url = 'testurl'
-  modelInterface = new ModelInterface(projectName, sessionId)
+  actionConverter = new ActionConverter(sessionId)
 })
 
 describe('test model interface query construction', () => {
@@ -26,7 +24,7 @@ describe('test model interface query construction', () => {
     })
     const itemIndex = 1
     const rectAction = addBox2dLabel(itemIndex, 0, [], {}, rect)
-    const query = modelInterface.actionToQuery(rectAction, url, itemIndex)
+    const query = actionConverter.actionToQuery(rectAction, url)
     expect(query).not.toEqual(null)
     if (!query) {
       return
@@ -53,7 +51,7 @@ describe('test model interface query construction', () => {
     ]
     const itemIndex = 0
     const polyAction = addPolygon2dLabel(itemIndex, 0, [], points, true)
-    const query = modelInterface.actionToQuery(polyAction, url, itemIndex)
+    const query = actionConverter.actionToQuery(polyAction, url)
     expect(query).not.toEqual(null)
     if (!query) {
       return
@@ -72,7 +70,7 @@ describe('test model interface action translation', () => {
   test('poly action translation', () => {
     const polyPoints = [[1, 5], [100, -5]]
     const itemIndex = 3
-    const action = modelInterface.makePolyAction(polyPoints, itemIndex)
+    const action = actionConverter.makePolyAction(polyPoints, itemIndex)
     expect(action.sessionId).toBe(sessionId)
 
     const label = action.labels[0][0]

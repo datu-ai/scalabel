@@ -3,10 +3,19 @@ import { ADD_LABELS } from '../const/action'
 import { ShapeTypeName } from '../const/common'
 import { makeLabelExport, makeSimplePathPoint2D } from '../functional/states'
 import { convertPolygonToExport } from '../server/export'
-import { AddLabelsAction, BaseAction } from '../types/action'
+import { AddLabelsAction, BaseAction, ItemIndexable } from '../types/action'
 import { LabelExport } from '../types/bdd'
 import { ModelQuery, QueryType } from '../types/bot'
-import { PathPoint2DType, PathPointType, RectType } from '../types/state'
+import { PathPoint2DType, PathPointType, RectType, State } from '../types/state'
+
+/**
+ * Type guard for actions that affect indices
+ */
+function isIndexableAction (action: BaseAction):
+  action is BaseAction & ItemIndexable {
+  // tslint:disable-next-line: strict-type-predicates
+  return (action as unknown as ItemIndexable).itemIndices !== undefined
+}
 
 /**
  * Type guard for add labels actions
@@ -16,29 +25,37 @@ function isAddLabelAction (action: BaseAction): action is AddLabelsAction {
 }
 
 /**
- * API between redux style data and data for the models
+ * Conversion between redux actions and data for the models
  */
-export class ModelInterface {
-  /** project name */
-  public projectName: string
+export class ActionConverter {
   /** current session id */
   public sessionId: string
 
-  constructor (projectName: string, sessionId: string) {
-    this.projectName = projectName
+  constructor (sessionId: string) {
     this.sessionId = sessionId
   }
 
   /**
-   * Generate BDD data format item corresponding to the action
+   * Convert action to a query
    * Only handles box2d/polygon2d actions, so assume a single label/shape/item
    * If action is not handled, returns null
    */
-  public actionToQuery (
-    action: BaseAction, url: string, itemIndex: number): ModelQuery | null {
-    if (!isAddLabelAction(action)) {
+  public getQuery (state: State, action: BaseAction): ModelQuery | null {
+    if (!isIndexableAction(action) || !isAddLabelAction(action)) {
       return null
     }
+    const url = Object.values(
+      state.task.items[action.itemIndices[0]].urls)[0]
+    return this.actionToQuery(action, url)
+  }
+
+  /**
+   * Generate BDD data format item corresponding to the action
+   * If action is not handled, returns null
+   */
+  public actionToQuery (
+    action: AddLabelsAction, url: string): ModelQuery | null {
+    const itemIndex = action.itemIndices[0]
     const shapes = action.shapes[0][0]
     const shapeType = shapes[0].shapeType
     const label = action.labels[0][0]

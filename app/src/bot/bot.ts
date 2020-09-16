@@ -6,27 +6,16 @@ import { index2str } from '../common/util'
 import { EventName } from '../const/connection'
 import Logger from '../server/logger'
 import { getGRPCConnFailedMsg } from '../server/util'
-import { AddLabelsAction, BaseAction, DeleteLabelsAction, ItemIndexable } from '../types/action'
-import { LabelExport } from '../types/bdd'
-import { BotData, ItemQueries, ModelQuery,
-  QueriesByItem, QueriesByType } from '../types/bot'
+import { AddLabelsAction, BaseAction, DeleteLabelsAction } from '../types/action'
+import { BotData, ItemQueries, QueriesByItem, QueriesByType } from '../types/bot'
 import {
   ActionPacketType, RegisterMessageType, SyncActionMessageType
 } from '../types/message'
 import { ReduxStore } from '../types/redux'
 import { State } from '../types/state'
+import { ActionConverter } from './action_converter'
 import { DeploymentClient } from './deployment_client'
-import { ModelInterface } from './model_interface'
 import { parseInstanceSegmentationResult } from './proto_utils'
-
-/**
- * Type guard for actions that affect indices
- */
-function isIndexableAction (action: BaseAction):
-  action is BaseAction & ItemIndexable {
-  // tslint:disable-next-line: strict-type-predicates
-  return (action as unknown as ItemIndexable).itemIndices !== undefined
-}
 
 type BotAction = AddLabelsAction | DeleteLabelsAction
 
@@ -52,8 +41,8 @@ export class Bot {
   protected actionLog: BaseAction[]
   /** Log of packets that have been acked */
   protected ackedPackets: Set<string>
-  /** interface with model data type */
-  protected modelInterface: ModelInterface
+  /** Converter for redux actions */
+  protected actionConverter: ActionConverter
   /** Number of actions received via broadcast */
   private actionCount: number
   /** The deployment client for the models */
@@ -87,7 +76,7 @@ export class Bot {
     this.actionLog = []
     this.ackedPackets = new Set()
 
-    this.modelInterface = new ModelInterface(this.projectName, this.sessionId)
+    this.actionConverter = new ActionConverter(this.projectName)
   }
 
   /**
@@ -222,17 +211,16 @@ export class Bot {
     const actions: BotAction[] = []
     // TODO: currently waits for each endpoint sequentially, can parallelize
     for (const [queryType, queriesByItem] of queriesByType) {
-      const itemIndices: number[] = []
-      const urls: string[] = []
-      const labelLists: LabelExport[][] = []
-      const labelIds: string[][] = []
-      for (const [itemIndex, itemQuery] of queriesByItem) {
-        itemIndices.push(itemIndex)
-        urls.push(itemQuery.url)
-        labelLists.push(itemQuery.queries.map((query) => query.label))
-        labelIds.push(
-          itemQuery.queries.map((query) => query.label.id as string))
-      }
+      const itemIndices = Array.from(queriesByItem.keys())
+      const itemQueries = Array.from(queriesByItem.values())
+      const urls = itemQueries.map((itemQuery) => itemQuery.url)
+      const labelLists = itemQueries.map((itemQuery) =>
+        itemQuery.queries.map((query) => query.label)
+      )
+      const labelIds = itemQueries.map((itemQuery) =>
+        itemQuery.queries.map((query) => query.label.id as string)
+      )
+
       try {
         const resp = await this.deploymentClient.infer(
           queryType, urls, labelLists)
@@ -240,14 +228,12 @@ export class Bot {
           `Got a ${resp.getMessage()} response from the model`)
         resp.getInstanceSegmentationResultList().forEach(
           (segmentationResult, index: number) => {
-            const polygons = parseInstanceSegmentationResult(segmentationResult)
-            polygons.forEach((polyPoints: number[][]) => {
-              const action = this.modelInterface.makePolyAction(
-                polyPoints, itemIndices[index]
-              )
-              actions.push(action)
-
-            })
+            parseInstanceSegmentationResult(segmentationResult).forEach(
+              (polyPoints: number[][]) => {
+                actions.push(this.actionConverter.makePolyAction(
+                  polyPoints, itemIndices[index]
+                ))
+              })
           })
         actions.push(deleteLabels(itemIndices, labelIds))
       } catch (e) {
@@ -272,16 +258,18 @@ export class Bot {
           `Bot received action of type ${action.type}`)
 
         const state = this.store.getState().present
-        const query = this.actionToQuery(state, action)
+        const query = this.actionConverter.getQuery(state, action)
         if (query) {
           const defaultQueriesByItem: QueriesByItem = new Map()
           const queriesByItem =
             queriesByType.get(query.type) || defaultQueriesByItem
+
           const defaultItemQueries: ItemQueries = {
             url: query.url, queries: []
           }
           const itemQueries =
             queriesByItem.get(query.itemIndex) || defaultItemQueries
+
           itemQueries.queries.push(query)
           queriesByItem.set(query.itemIndex, itemQueries)
           queriesByType.set(query.type, queriesByItem)
@@ -289,21 +277,5 @@ export class Bot {
       }
     }
     return queriesByType
-  }
-
-  /**
-   * Generate BDD data format item corresponding to the action
-   * Only handles box2d/polygon2d actions, so assume a single label/shape/item
-   */
-  private actionToQuery (
-    state: State, action: BaseAction): ModelQuery | null {
-    if (!isIndexableAction(action)) {
-      return null
-    }
-
-    const itemIndex = action.itemIndices[0]
-    const item = state.task.items[itemIndex]
-    const url = Object.values(item.urls)[0]
-    return this.modelInterface.actionToQuery(action, url, itemIndex)
   }
 }
