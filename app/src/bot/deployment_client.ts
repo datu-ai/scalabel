@@ -38,22 +38,23 @@ export class DeploymentClient {
   protected modelTypeToProto: Map<ModelType, common.TaskType>
   /** Map from query type to model type */
   protected queryTypeToModel: Map<QueryType, ModelType>
+  /** An arbitrary project ID reserved for Scalabel */
+  protected projectId: string
 
   constructor (stub: services.DeploymentServiceClient) {
     this.stub = stub
     this.modelTypeToDeployID = new Map()
-    this.modelTypeToProto = new Map()
-    this.modelTypeToProto.set(ModelType.INSTANCE_SEGMENTATION,
-      common.TaskType.INSTANCE_SEGMENTATION)
-    this.modelTypeToProto.set(ModelType.OBJECT_DETECTION_2D,
-      common.TaskType.OBJECT_DETECTION_2D)
+    this.modelTypeToProto = new Map([
+      [ModelType.INSTANCE_SEGMENTATION, common.TaskType.INSTANCE_SEGMENTATION],
+      [ModelType.OBJECT_DETECTION_2D, common.TaskType.OBJECT_DETECTION_2D]
+    ])
 
-    this.queryTypeToModel = new Map()
-    this.queryTypeToModel.set(
-      QueryType.PREDICT_POLY, ModelType.INSTANCE_SEGMENTATION)
-    this.queryTypeToModel.set(
-      QueryType.REFINE_POLY, ModelType.INSTANCE_SEGMENTATION
-    )
+    this.queryTypeToModel = new Map([
+      [QueryType.PREDICT_POLY, ModelType.INSTANCE_SEGMENTATION],
+      [QueryType.REFINE_POLY, ModelType.INSTANCE_SEGMENTATION]
+    ])
+
+    this.projectId = 'scalabelProjectId'
   }
 
   /**
@@ -86,6 +87,9 @@ export class DeploymentClient {
 
   /**
    * Run inference on a deployed model
+   * @param queryType: the type of inference query
+   * @param urlList: the list of image urls
+   * @param labelLists: for each image, the list of labels
    */
   public async infer (
     queryType: QueryType, urlList: string[],
@@ -97,13 +101,15 @@ export class DeploymentClient {
         Error(`${queryType.toString()} query not supported.`)
       )
     }
+
     const deployId = this.modelTypeToDeployID.get(modelType)
     if (deployId === undefined) {
       return Promise.reject(
         Error(`${modelType.toString()} model not deployed.`))
     }
+
     const req = new messages.InferenceRequest()
-    req.setProjectId('abcde12345')
+    req.setProjectId(this.projectId)
     req.setDeploymentTaskId(deployId)
     req.setUrlListList(urlList)
     const protoBoxList = labelLists.map((labelList) => boxListToProto(
@@ -115,8 +121,7 @@ export class DeploymentClient {
       this.stub.performInference(req, (
         err: Error | null, result: messages.InferenceResponse) => {
         if (err) {
-          reject(err)
-          return
+          return reject(err)
         }
         resolve(result)
       })
@@ -135,15 +140,14 @@ export class DeploymentClient {
     }
 
     const req = new messages.CreateDeploymentTaskRequest()
-    req.setProjectId('abcde12345')
+    req.setProjectId(this.projectId)
     req.setTaskType(taskType)
 
     return new Promise((resolve, reject) => {
       this.stub.createDeploymentTask(req,
         (err: Error | null, result: messages.CreateDeploymentTaskResponse) => {
           if (err) {
-            reject(err)
-            return
+            return reject(err)
           }
           resolve(result)
         })
@@ -156,7 +160,7 @@ export class DeploymentClient {
   private async finishDeployment (deployId: string):
     Promise<messages.DeployResponse> {
     const req = new messages.DeployRequest()
-    req.setProjectId('abcde12345')
+    req.setProjectId(this.projectId)
     req.setNumGpus(1)
     req.setDeploymentTaskId(deployId)
 
@@ -164,8 +168,7 @@ export class DeploymentClient {
       this.stub.deployModel(req,
         (err: Error | null, result: messages.DeployResponse) => {
           if (err) {
-            reject(err)
-            return
+            return reject(err)
           }
           resolve(result)
         })
