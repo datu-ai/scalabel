@@ -2,33 +2,6 @@ import { Box2DType } from '../types/bdd'
 import * as messages from './proto_gen/model_deployment_service_pb.js'
 
 /**
- * Helper function to generate model result given a request
- */
-export function getDummyModelResult (
-  request: messages.InferenceRequest):
-  messages.InferenceResponse {
-  const segmentations: messages.InstanceSegmentationResult[] = []
-  for (const boxList of request.getBoxListsList()) {
-    const segmentation = new messages.InstanceSegmentationResult()
-    for (const _box of boxList.getBoxesList()) {
-      const polygon = new messages.Polygon()
-      for (let i = 0; i++; i < 5) {
-        const point = new messages.Point()
-        point.setX(Math.random())
-        point.setY(Math.random())
-        polygon.addPoints(point)
-      }
-      segmentation.addPolygons(polygon)
-    }
-    segmentations.push(segmentation)
-  }
-  const result = new messages.InferenceResponse()
-  result.setInstanceSegmentationResultList(segmentations)
-  result.setMessage('success')
-  return result
-}
-
-/**
  * Convert a box list from BDD format to proto format
  */
 export function boxListToProto (

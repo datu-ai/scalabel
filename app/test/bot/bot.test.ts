@@ -1,8 +1,6 @@
 import io from 'socket.io-client'
 import { Bot } from '../../src/bot/bot'
-import { DeploymentClient, makeStub } from '../../src/bot/deployment_client'
-import * as protoMessages from '../../src/bot/proto_gen/model_deployment_service_pb.js'
-import { getDummyModelResult } from '../../src/bot/proto_utils'
+import { DeploymentClient } from '../../src/bot/deployment_client'
 import { configureStore } from '../../src/common/configure_store'
 import { uid } from '../../src/common/uid'
 import { index2str } from '../../src/common/util'
@@ -20,6 +18,7 @@ import {
   getInitialState,
   getRandomBox2dAction
 } from '../server/util/util'
+import { makeMockGRPCStub } from './util'
 
 let botData: BotData
 const socketEmit = jest.fn()
@@ -44,38 +43,8 @@ beforeAll(async () => {
   }
   webId = 'fakeUserId'
   initialState = getInitialState(webId)
-  const stub = makeStub(serverConfig.bot)
-  if (!stub) {
-    return
-  }
-  stub.deployModel = jest.fn().mockImplementation((
-    _req: protoMessages.DeployRequest,
-    callback: (
-      error: Error | null, result: protoMessages.DeployResponse
-    ) => void) => {
-    callback(null, new protoMessages.DeployResponse())
-  })
-  stub.createDeploymentTask = jest.fn().mockImplementation((
-    _req: protoMessages.CreateDeploymentTaskRequest,
-    callback: (
-      error: Error | null, result: protoMessages.CreateDeploymentTaskResponse
-    ) => void) => {
-    const resp = new protoMessages.CreateDeploymentTaskResponse()
-    resp.setDeploymentTaskId('testDeployId')
-    callback(null, resp)
-  })
-  /**
-   * Mock request to deployment server
-   * Should return the same number of predictions as requests
-   */
-  stub.performInference = jest.fn().mockImplementation((
-    request: protoMessages.InferenceRequest,
-    callback: (
-      error: Error | null, result: protoMessages.InferenceResponse) => void
-  ) => {
-    const resp = getDummyModelResult(request)
-    callback(null, resp)
-  })
+
+  const stub = makeMockGRPCStub(serverConfig.bot)
   deploymentClient = new DeploymentClient(stub)
   await deploymentClient.deployModel(ModelType.INSTANCE_SEGMENTATION)
 })
