@@ -73,14 +73,16 @@ export class DeploymentClient {
       logger.error(e)
       return
     }
-    const deployId = cdtResponse.getDeploymentTaskId()
+    let deployId = cdtResponse.getDeploymentTaskId()
 
+    let deployResponse: messages.DeployResponse
     try {
-      await this.finishDeployment(deployId)
+      deployResponse = await this.finishDeployment(deployId)
     } catch (e) {
       logger.error(e)
       return
     }
+    deployId = deployResponse.getDeploymentTaskId()
     logger.info(`Successfully deployed ${modelType.toString()} model.`)
     this.modelTypeToDeployID.set(modelType, deployId)
   }
