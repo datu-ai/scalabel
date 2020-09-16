@@ -1,3 +1,5 @@
+import { addBox2dLabel } from '../../src/action/box2d'
+import { addPolygon2dLabel } from '../../src/action/polygon2d'
 import { ModelInterface } from '../../src/bot/model_interface'
 import { LabelTypeName } from '../../src/const/common'
 import { makePathPoint2D, makeRect } from '../../src/functional/states'
@@ -23,11 +25,25 @@ describe('test model interface query construction', () => {
       x1: 5, y1: 2, x2: 6, y2: 10
     })
     const itemIndex = 1
-    const query = modelInterface.makeRectQuery(rect, url, itemIndex, rect.id)
+    const rectAction = addBox2dLabel(itemIndex, 0, [], {}, rect)
+    const query = modelInterface.actionToQuery(rectAction, url, itemIndex)
+    expect(query).not.toEqual(null)
+    if (!query) {
+      return
+    }
     expect(query.type).toBe(QueryType.PREDICT_POLY)
     expect(query.itemIndex).toBe(itemIndex)
     expect(query.url).toBe(url)
-    expect(query.label.box2d).toEqual(rect)
+
+    const box2d = query.label.box2d
+    expect(box2d).not.toEqual(null)
+    if (!box2d) {
+      return
+    }
+    expect(box2d.x1).toEqual(rect.x1)
+    expect(box2d.y1).toEqual(rect.y1)
+    expect(box2d.x2).toEqual(rect.x2)
+    expect(box2d.y2).toEqual(rect.y2)
   })
 
   test('poly query construction', () => {
@@ -36,15 +52,18 @@ describe('test model interface query construction', () => {
       makePathPoint2D({ x: 5, y: 3, pointType: PathPointType.LINE })
     ]
     const itemIndex = 0
-    const labelType = LabelTypeName.POLYGON_2D
-    const query = modelInterface.makePolyQuery(
-      points, url, itemIndex, points[0].id, labelType
-    )
+    const polyAction = addPolygon2dLabel(itemIndex, 0, [], points, true)
+    const query = modelInterface.actionToQuery(polyAction, url, itemIndex)
+    expect(query).not.toEqual(null)
+    if (!query) {
+      return
+    }
     expect(query.type).toBe(QueryType.REFINE_POLY)
     expect(query.itemIndex).toBe(itemIndex)
     expect(query.url).toBe(url)
 
-    const expectedPoly = convertPolygonToExport(points, labelType)
+    const expectedPoly = convertPolygonToExport(
+      points, LabelTypeName.POLYGON_2D)
     expect(query.label.poly2d).toEqual(expectedPoly)
   })
 })

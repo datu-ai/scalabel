@@ -4,6 +4,7 @@ import { ShapeTypeName } from '../const/common'
 import { makeLabelExport, makeSimplePathPoint2D } from '../functional/states'
 import { convertPolygonToExport } from '../server/export'
 import { AddLabelsAction, BaseAction } from '../types/action'
+import { LabelExport } from '../types/bdd'
 import { ModelQuery, QueryType } from '../types/bot'
 import { PathPoint2DType, PathPointType, RectType } from '../types/state'
 
@@ -34,24 +35,41 @@ export class ModelInterface {
    * If action is not handled, returns null
    */
   public actionToQuery (
-    action: BaseAction, url: string, itemIndex: number) {
+    action: BaseAction, url: string, itemIndex: number): ModelQuery | null {
     if (!isAddLabelAction(action)) {
       return null
     }
-    const shapeType = action.shapes[0][0][0].shapeType
     const shapes = action.shapes[0][0]
+    const shapeType = shapes[0].shapeType
     const label = action.labels[0][0]
+
+    let labelExport: LabelExport
+    let queryType: QueryType
     switch (shapeType) {
       case ShapeTypeName.RECT:
-        return this.makeRectQuery(
-          shapes[0] as RectType, url, itemIndex, label.id
-        )
-      case ShapeTypeName.POLYGON_2D:
-        return this.makePolyQuery(
-          shapes as PathPoint2DType[], url, itemIndex, label.id, label.type
-        )
+        labelExport = makeLabelExport({
+          box2d: shapes[0] as RectType,
+          id: label.id
+        })
+        queryType = QueryType.PREDICT_POLY
+        break
+      case ShapeTypeName.PATH_POINT_2D:
+        labelExport = makeLabelExport({
+          poly2d: convertPolygonToExport(
+            shapes as PathPoint2DType[], label.type),
+          id: label.id
+        })
+        queryType = QueryType.REFINE_POLY
+        break
       default:
         return null
+    }
+
+    return {
+      url,
+      itemIndex,
+      label: labelExport,
+      type: queryType
     }
   }
 
@@ -70,42 +88,5 @@ export class ModelInterface {
     )
     action.sessionId = this.sessionId
     return action
-  }
-
-  /**
-   * Query for 'rect -> polygon' segmentation
-   */
-  public makeRectQuery (
-    rect: RectType, url: string, itemIndex: number, id: string): ModelQuery {
-    const label = makeLabelExport({
-      box2d: rect,
-      id
-    })
-
-    return {
-      label,
-      url,
-      type: QueryType.PREDICT_POLY,
-      itemIndex
-    }
-  }
-
-  /**
-   * Query for refining 'polygon -> polygon' segmentation
-   */
-  public makePolyQuery (
-    points: PathPoint2DType[], url: string,
-    itemIndex: number, id: string, labelType: string): ModelQuery {
-    const poly2d = convertPolygonToExport(points, labelType)
-    const label = makeLabelExport({
-      poly2d,
-      id
-    })
-    return {
-      label,
-      url,
-      type: QueryType.REFINE_POLY,
-      itemIndex
-    }
   }
 }
