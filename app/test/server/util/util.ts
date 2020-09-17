@@ -64,7 +64,15 @@ export function makeProjectDir (dataDir: string, projectName: string) {
  */
 export function getInitialState (sessionId: string): State {
   const partialTask: Partial<TaskType> = {
-    items: [makeItem({ index: 0, id: '0' }, true)],
+    items: [makeItem(
+      {
+        index: 0,
+        id: '0',
+        urls: {
+          0: 'https://s3-us-west-2.amazonaws.com/scalabel-public/demo/frames/intersection-0000070.jpg'
+        }
+      },
+    true)],
     sensors: { 0: makeSensor(0, '', '') }
   }
   const defaultTask = makeTask(partialTask)
@@ -83,18 +91,6 @@ export function getRandomBox2dAction (itemIndex: number = 0) {
   return addBox2dLabel(itemIndex, 0, [], {},
     { x1: Math.random(), y1: Math.random(),
       x2: Math.random(), y2: Math.random() })
-}
-
-/**
- * Helper function to generate points of a polygon
- * In the format returned by the model server
- */
-export function getRandomModelPoly () {
-  const points = []
-  for (let i = 0; i++; i < 5) {
-    points.push([Math.random(), Math.random()])
-  }
-  return points
 }
 
 /**

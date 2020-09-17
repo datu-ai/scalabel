@@ -16,7 +16,7 @@ curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
     nodejs redis-server python3.8 \
-    python3.8-dev python3-pip python3-setuptools
+    python3.8-dev python3-pip python3-setuptools protobuf-compiler
 
 echo [$(date +"%F %T")] ================================
 echo [$(date +"%F %T")] Installing python dependencies
@@ -35,6 +35,7 @@ echo [$(date +"%F %T")] ================================
 echo [$(date +"%F %T")] Compiling source code
 echo [$(date +"%F %T")] ================================
 
+./proto/build.sh
 node_modules/.bin/webpack --config webpack.config.js --mode=production
 
 # . ${DIR}/setup_local_dir.sh

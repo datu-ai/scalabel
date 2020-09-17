@@ -6,7 +6,7 @@ echo [$(date +"%F %T")] ================================
 echo [$(date +"%F %T")] Installing redis and node
 echo [$(date +"%F %T")] ================================
 
-brew install redis node python@3.8
+brew install redis node python@3.8 protobuf
 export PATH="/usr/local/opt/python@3.8/bin:$PATH"
 
 echo [$(date +"%F %T")] ================================
@@ -26,6 +26,7 @@ echo [$(date +"%F %T")] ================================
 echo [$(date +"%F %T")] Compiling source code
 echo [$(date +"%F %T")] ================================
 
+./proto/build.sh
 node_modules/.bin/webpack --config webpack.config.js --mode=production
 
 # . ${DIR}/setup_local_dir.sh

@@ -1,40 +1,24 @@
-import axios, { AxiosRequestConfig } from 'axios'
 import io from 'socket.io-client'
+import { Bot } from '../../src/bot/bot'
+import { DeploymentClient } from '../../src/bot/deployment_client'
 import { configureStore } from '../../src/common/configure_store'
 import { uid } from '../../src/common/uid'
 import { index2str } from '../../src/common/util'
 import { EventName } from '../../src/const/connection'
-import { Bot } from '../../src/server/bot'
 import { serverConfig } from '../../src/server/defaults'
-import { AddLabelsAction } from '../../src/types/action'
-import { ItemExport } from '../../src/types/bdd'
+import { AddLabelsAction, DeleteLabelsAction } from '../../src/types/action'
+import { BotData, ModelType } from '../../src/types/bot'
 import {
-  ActionPacketType, BotData, RegisterMessageType,
-  SyncActionMessageType } from '../../src/types/message'
+  ActionPacketType, RegisterMessageType,
+  SyncActionMessageType
+} from '../../src/types/message'
 import { ReduxStore } from '../../src/types/redux'
 import { State } from '../../src/types/state'
 import {
-  getInitialState, getRandomBox2dAction,
-  getRandomModelPoly } from './util/util'
-
-/**
- *  Mock post request to model server
- * They should return the same number of prediction actions as request actions
- */
-jest.mock('axios')
-axios.post = jest.fn().mockImplementation(
-  (_endpoint: string, data: ItemExport[], _config: AxiosRequestConfig) => {
-    const points = []
-    for (const _ of data) {
-      points.push(getRandomModelPoly())
-    }
-    return {
-      status: 200,
-      data: {
-        points
-      }
-    }
-  })
+  getInitialState,
+  getRandomBox2dAction
+} from '../server/util/util'
+import { makeMockGRPCStub } from './util'
 
 let botData: BotData
 const socketEmit = jest.fn()
@@ -43,13 +27,12 @@ const mockSocket = {
   connected: true,
   emit: socketEmit
 }
-let host: string
-let port: number
 let webId: string
 let projectName: string
 let initialState: State
+let deploymentClient: DeploymentClient
 
-beforeAll(() => {
+beforeAll(async () => {
   io.connect = jest.fn().mockImplementation(() => mockSocket)
   projectName = 'testProject'
   botData = {
@@ -58,21 +41,26 @@ beforeAll(() => {
     botId: 'fakeBotId',
     address: location.origin
   }
-  host = serverConfig.bot.host
-  port = serverConfig.bot.port
   webId = 'fakeUserId'
   initialState = getInitialState(webId)
+
+  const stub = makeMockGRPCStub(serverConfig.bot)
+  if (!stub) {
+    return
+  }
+  deploymentClient = new DeploymentClient(stub)
+  await deploymentClient.deployModel(ModelType.INSTANCE_SEGMENTATION)
 })
 
 // Note that these tests are similar to the frontend tests for synchronizer
 describe('Test simple bot functionality', () => {
   test('Test data access', async () => {
-    const bot = new Bot(botData, host, port)
+    const bot = new Bot(deploymentClient, botData)
     expect(bot.getData()).toEqual(botData)
   })
 
   test('Test correct registration message gets sent', async () => {
-    const bot = new Bot(botData, host, port)
+    const bot = new Bot(deploymentClient, botData)
     bot.connectHandler()
 
     checkConnectMessage(bot.sessionId)
@@ -90,8 +78,9 @@ describe('Test bot send-ack loop', () => {
 
     // Send the action packet
     const botActions = await bot.actionBroadcastHandler(message)
+
     expect(bot.getActionCount()).toBe(numActions)
-    expect(botActions.length).toBe(numActions)
+    expect(botActions.length).toBe(numActions + 1)
 
     // Verify that the trigger id is set correctly
     const calls = socketEmit.mock.calls
@@ -110,8 +99,10 @@ describe('Test bot send-ack loop', () => {
 
     // Send the action packet
     let botActions = await bot.actionBroadcastHandler(message)
+
+    // 1 response per action, plus 1 for deletion
     expect(bot.getActionCount()).toBe(numActions)
-    expect(botActions.length).toBe(numActions)
+    expect(botActions.length).toBe(numActions + 1)
 
     // Send the duplicate packet
     botActions = await bot.actionBroadcastHandler(message)
@@ -144,7 +135,7 @@ describe('Test bot send-ack loop', () => {
     const numMessages = 5
     const messages = []
     const actionsPerMessage = []
-    for (let _ = 0 ; _ < numMessages ; _++) {
+    for (let _ = 0; _ < numMessages; _++) {
       // Random int from 1 to 10
       const numActions = 1 + Math.floor(Math.random() * 10)
       actionsPerMessage.push(numActions)
@@ -160,7 +151,7 @@ describe('Test bot send-ack loop', () => {
 
       totalActions += numActions
       expect(bot.getActionCount()).toBe(totalActions)
-      expect(botActions.length).toBe(numActions)
+      expect(botActions.length).toBe(numActions + 1)
     }
 
     // Check the final store
@@ -176,7 +167,7 @@ describe('Test bot send-ack loop', () => {
  * Creates the bot and initializes its store using the register handler
  */
 function setUpBot () {
-  const bot = new Bot(botData, host, port)
+  const bot = new Bot(deploymentClient, botData)
   bot.registerAckHandler(initialState)
   return bot
 }
@@ -187,7 +178,7 @@ function setUpBot () {
  */
 function updateExpectedStore (
   store: ReduxStore, message: SyncActionMessageType,
-  botActions: AddLabelsAction[]) {
+  botActions: Array<AddLabelsAction | DeleteLabelsAction>) {
   // Apply incoming actions
   for (const action of message.actions.actions) {
     store.dispatch(action)

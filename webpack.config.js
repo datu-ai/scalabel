@@ -72,7 +72,7 @@ let serverConfig = {
   externals: [nodeExternals()],
   devtool: '',
   entry: {
-    main: __dirname + '/app/src/server/main.ts',
+    main: __dirname + '/app/src/server/main.ts'
   },
   output: {
     filename: '[name].js',

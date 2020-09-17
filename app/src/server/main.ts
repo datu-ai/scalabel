@@ -4,11 +4,13 @@ import * as formidable from 'express-formidable'
 import { createServer } from 'http'
 import socketio from 'socket.io'
 import 'source-map-support/register'
+import { BotManager } from '../bot/bot_manager'
+import { DeploymentClient, makeStub } from '../bot/deployment_client'
 import { Endpoint } from '../const/connection'
 import { STORAGE_FOLDERS, StorageStructure } from '../const/storage'
 import { removeListItems } from '../functional/util'
+import { ModelType } from '../types/bot'
 import { ServerConfig } from '../types/config'
-import { BotManager } from './bot_manager'
 import { readConfig } from './config'
 import Callback from './controller/callback'
 import { Hub } from './hub'
@@ -97,7 +99,15 @@ function makeRedisPubSub (config: ServerConfig): RedisPubSub {
 async function makeBotManager (
   config: ServerConfig, subscriber: RedisPubSub, cacheClient: RedisClient) {
   if (config.bot.on) {
-    const botManager = new BotManager(config.bot, subscriber, cacheClient)
+    const stub = makeStub(config.bot)
+    if (!stub) {
+      return
+    }
+    const deploymentClient = new DeploymentClient(stub)
+    await deploymentClient.deployModel(ModelType.INSTANCE_SEGMENTATION)
+
+    const botManager = new BotManager(
+      config.bot, subscriber, cacheClient, deploymentClient)
     await botManager.listen()
   }
 }
