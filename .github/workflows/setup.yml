@@ -30,9 +30,17 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
+    - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.4.0
+        with:
+          ssh-private-key: ${{ secrets.SUBMODULE_PULL_KEY }}
+
     # Runs a single command using the runners shell
     - name: Run setup script
-      run: ./scripts/setup_ubuntu.sh
+      run: |
+        git config --global url.ssh://git@github.com/.insteadOf https://github.com/
+        auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+        ./scripts/setup_ubuntu.sh
   
   macos:
     # The type of runner that the job will run on
@@ -43,6 +51,14 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
+    - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.4.0
+        with:
+          ssh-private-key: ${{ secrets.SUBMODULE_PULL_KEY }}
+
     # Runs a single command using the runners shell
     - name: Run setup script
-      run: ./scripts/setup_osx.sh
+      run: |
+        git config --global url.ssh://git@github.com/.insteadOf https://github.com/
+        auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+        ./scripts/setup_osx.sh
