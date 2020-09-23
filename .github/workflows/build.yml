@@ -56,8 +56,15 @@ jobs:
           npm ci
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
-      - name: Build protos
-        run: ./proto/build.sh
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.4.0
+        with:
+          ssh-private-key: ${{ secrets.SUBMODULE_PULL_KEY }}
+      - name: Build protos from submodule
+        run: |
+            git config --global url.ssh://git@github.com/.insteadOf https://github.com/
+            auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+            ./proto/build.sh
       - name: Lint
         run: node_modules/.bin/tslint --project tsconfig.json --config tslint.json
       - name: Test
