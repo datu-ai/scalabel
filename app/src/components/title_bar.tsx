@@ -2,13 +2,15 @@ import * as fa from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { AppBar, IconButton, Toolbar, Tooltip } from '@material-ui/core'
 import Fade from '@material-ui/core/Fade'
+import FormControlLabel from '@material-ui/core/FormControlLabel'
 import { Theme, withStyles } from '@material-ui/core/styles'
 import createStyles from '@material-ui/core/styles/createStyles'
+import Switch from '@material-ui/core/Switch'
 import Typography from '@material-ui/core/Typography'
 import _ from 'lodash'
 import React from 'react'
 import { connect } from 'react-redux'
-import { save, submit } from '../action/common'
+import { save, submit, toggleBot } from '../action/common'
 import Session from '../common/session'
 import { Key } from '../const/common'
 import * as selector from '../functional/selector'
@@ -49,6 +51,8 @@ interface StateProps {
   statusText: string
   /** Whether to hide or show status text */
   statusTextHide: boolean
+  /** Whether user has bot enabled */
+  bot: boolean
 }
 
 interface DispatchProps {
@@ -56,6 +60,8 @@ interface DispatchProps {
   save: () => void
   /** Adds submission to the state */
   submit: () => void
+  /** Toggles whether bot is enabled */
+  toggleBot: () => void
 }
 
 interface ButtonInfo {
@@ -124,17 +130,19 @@ class TitleBar extends Component<Props> {
   }
 
   /**
+   * Handle bot switch toggle
+   */
+  public handleBotSwitch () {
+    this.props.toggleBot()
+  }
+
+  /**
    * Render function
    * @return {React.Fragment} React fragment
    */
   public render () {
-    const { classes } = this.props
-    const { title } = this.props
-    const { instructionLink } = this.props
-    const { dashboardLink } = this.props
-    const { autosave } = this.props
-    const { statusText } = this.props
-    const { statusTextHide } = this.props
+    const { classes, title, instructionLink,
+      dashboardLink, autosave, statusText, statusTextHide, bot} = this.props
 
     const buttonInfo: ButtonInfo[] = [
       { title: 'Instructions', href: instructionLink, icon: fa.faInfo },
@@ -172,6 +180,16 @@ class TitleBar extends Component<Props> {
             </StatusMessageBox>
           </Fade>
           <div className={classes.grow} />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={bot}
+                onChange={this.handleBotSwitch.bind(this)}
+              />
+            }
+            label={'Bot'}
+          />
+
           {buttons}
         </Toolbar>
       </AppBar>
@@ -186,14 +204,16 @@ const mapStateToProps = (state: ReduxState): StateProps => {
     dashboardLink: selector.getDashboardLink(state),
     autosave: selector.getAutosaveFlag(state),
     statusText: selector.getStatusText(state),
-    statusTextHide: selector.shouldStatusTextHide(state)
+    statusTextHide: selector.shouldStatusTextHide(state),
+    bot: selector.isBotEnabled(state)
   }
 }
 
 const mapDispatchToProps = () => {
   return {
     save: () => Session.dispatch(save()),
-    submit: () => Session.dispatch(submit())
+    submit: () => Session.dispatch(submit()),
+    toggleBot: () => Session.dispatch(toggleBot())
   }
 }
 

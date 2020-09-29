@@ -492,6 +492,13 @@ export function save (): actionTypes.SaveAction {
 }
 
 /**
+ * Toggle the bot switch
+ */
+export function toggleBot (): actionTypes.ToggleBotAction {
+  return makeBaseAction(actionConsts.TOGGLE_BOT)
+}
+
+/**
  * Update session status
  */
 export function updateSessionStatus (

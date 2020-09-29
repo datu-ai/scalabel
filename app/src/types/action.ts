@@ -190,6 +190,8 @@ export type DisconnectAction = BaseAction
 
 export type SaveAction = BaseAction
 
+export type ToggleBotAction = BaseAction
+
 export interface SequentialAction extends BaseAction {
   /** actions in this sequence */
   actions: BaseAction[]
@@ -221,6 +223,7 @@ export type UserActionType =
   | UpdatePaneAction
   | SplitPaneAction
   | DeletePaneAction
+  | ToggleBotAction
 
 export type TaskActionType =
   AddLabelsAction

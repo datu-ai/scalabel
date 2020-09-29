@@ -1341,3 +1341,23 @@ export function updateSessionStatus (
     }
   )
 }
+
+/**
+ * Update whether user has bot enabled
+ */
+export function toggleBot (
+  state: State, _action: actionTypes.ToggleBotAction
+): State {
+  const newUser = updateObject(
+    state.user,
+    {
+      bot: !state.user.bot
+    }
+  )
+
+  return updateObject(
+    state, {
+      user: newUser
+    }
+  )
+}

@@ -50,6 +50,13 @@ export const getDashboardLink = createSelector(
 )
 
 /**
+ * Get whether user has bot enabled
+ */
+export function isBotEnabled (state: ReduxState): boolean {
+  return state.present.user.bot
+}
+
+/**
  * Load the session
  */
 export function getSession (state: ReduxState): SessionType {

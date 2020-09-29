@@ -9,6 +9,7 @@ export const UPDATE_STATE = 'UPDATE_STATE'
 export const SUBMIT = 'SUBMIT'
 export const UPDATE_SESSION_STATUS = 'UPDATE_SESSION_STATUS'
 export const NULL = 'NULL'
+export const TOGGLE_BOT = 'TOGGLE_BOT'
 
 // Item Level
 export const ADD_LABELS = 'ADD_LABELS'

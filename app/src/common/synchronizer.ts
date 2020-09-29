@@ -293,6 +293,9 @@ export class Synchronizer {
         }
         this.actionsPendingSave =
           this.actionsPendingSave.update(packet.id, packet)
+        // Add a switch for a new flag
+        // change doesPacketTriggerModel to false
+        // Also propagate flag to backend via packet
         if (doesPacketTriggerModel(packet, bots)) {
           this.actionsPendingPrediction.add(packet.id)
         }
