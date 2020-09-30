@@ -57,6 +57,13 @@ export function isBotEnabled (state: ReduxState): boolean {
 }
 
 /**
+ * Get whether bot is enabled globally
+ */
+export function isBotOnGlobal (state: ReduxState): boolean {
+  return state.present.task.config.bots
+}
+
+/**
  * Load the session
  */
 export function getSession (state: ReduxState): SessionType {

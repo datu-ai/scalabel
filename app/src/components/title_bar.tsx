@@ -52,7 +52,9 @@ interface StateProps {
   /** Whether to hide or show status text */
   statusTextHide: boolean
   /** Whether user has bot enabled */
-  bot: boolean
+  botEnabledUser: boolean
+  /** Whether bots are enabled system wide */
+  botEnabledGlobal: boolean
 }
 
 interface DispatchProps {
@@ -142,7 +144,8 @@ class TitleBar extends Component<Props> {
    */
   public render () {
     const { classes, title, instructionLink,
-      dashboardLink, autosave, statusText, statusTextHide, bot} = this.props
+      dashboardLink, autosave, statusText, statusTextHide,
+      botEnabledGlobal, botEnabledUser} = this.props
 
     const buttonInfo: ButtonInfo[] = [
       { title: 'Instructions', href: instructionLink, icon: fa.faInfo },
@@ -168,6 +171,18 @@ class TitleBar extends Component<Props> {
 
     const buttons = buttonInfo.map((b) => renderButton(b, classes.titleUnit))
 
+    const botSwitch = botEnabledGlobal ? (
+      <FormControlLabel
+          control={
+            <Switch
+              checked={botEnabledUser}
+              onChange={this.handleBotSwitch.bind(this)}
+            />
+          }
+          label={'Bot'}
+        />
+    ) : null
+
     return (
       <AppBar className={classes.appBar}>
         <Toolbar>
@@ -180,16 +195,7 @@ class TitleBar extends Component<Props> {
             </StatusMessageBox>
           </Fade>
           <div className={classes.grow} />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={bot}
-                onChange={this.handleBotSwitch.bind(this)}
-              />
-            }
-            label={'Bot'}
-          />
-
+          {botSwitch}
           {buttons}
         </Toolbar>
       </AppBar>
@@ -205,7 +211,8 @@ const mapStateToProps = (state: ReduxState): StateProps => {
     autosave: selector.getAutosaveFlag(state),
     statusText: selector.getStatusText(state),
     statusTextHide: selector.shouldStatusTextHide(state),
-    bot: selector.isBotEnabled(state)
+    botEnabledUser: selector.isBotEnabled(state),
+    botEnabledGlobal: selector.isBotOnGlobal(state)
   }
 }
 
