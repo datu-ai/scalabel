@@ -122,7 +122,7 @@ describe('Test synchronizer functionality', () => {
     sync.sendConnectionMessage(sessionId, dispatch)
     checkConnectMessage(sessionId)
     sync.finishRegistration(
-      newInitialState, autosave, sessionId, false, dispatch)
+      newInitialState, autosave, sessionId, false, false, dispatch)
 
     /**
      * Check that frontend state updates correctly
@@ -156,7 +156,7 @@ function dispatchAndCheckActions (
   const actions: AddLabelsAction[] = []
   for (let _ = 0; _ < numActions; _++) {
     const action = getRandomBox2dAction()
-    sync.queueActionForSaving(action, autosave, sessionId, bots, dispatch)
+    sync.queueActionForSaving(action, autosave, sessionId, bots, bots, dispatch)
     actions.push(action)
   }
 
@@ -226,6 +226,7 @@ function startSynchronizer (setInitialState: boolean = true): Synchronizer {
       initialState.task.config.autosave,
       initialState.session.id,
       initialState.task.config.bots,
+      initialState.user.bot,
       dispatch)
   }
 
@@ -245,7 +246,7 @@ function packetToMessage (packet: ActionPacketType): SyncActionMessageType {
     projectName,
     sessionId,
     taskId: index2str(taskIndex),
-    bot: false
+    shouldTriggerBot: true
   }
 }
 
@@ -258,6 +259,6 @@ function packetToMessageBot (packet: ActionPacketType): SyncActionMessageType {
     projectName,
     sessionId: botSessionId,
     taskId: index2str(taskIndex),
-    bot: true
+    shouldTriggerBot: false
   }
 }

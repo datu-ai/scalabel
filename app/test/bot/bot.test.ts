@@ -229,6 +229,6 @@ function packetToMessage (
     projectName: botData.projectName,
     sessionId,
     taskId: index2str(botData.taskIndex),
-    bot: false
+    shouldTriggerBot: true
   }
 }
