@@ -110,7 +110,7 @@ export class Bot {
     const actionPacket = message.actions
     // If action was already acked, or if action came from a bot, ignore it
     if (this.ackedPackets.has(actionPacket.id)
-      || message.bot
+      || !message.shouldTriggerBot
       || message.sessionId === this.sessionId) {
       return []
     }
@@ -152,7 +152,7 @@ export class Bot {
       projectName: this.projectName,
       sessionId: this.sessionId,
       actions: actionPacket,
-      bot: true
+      shouldTriggerBot: false
     }
     this.socket.emit(EventName.ACTION_SEND, message)
   }

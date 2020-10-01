@@ -106,7 +106,7 @@ export class Synchronizer {
    */
   public queueActionForSaving (
     action: actionTypes.BaseAction, autosave: boolean,
-    sessionId: string, bots: boolean,
+    sessionId: string, bots: boolean, shouldTriggerBot: boolean,
     dispatch: ThunkDispatchType
   ) {
     const shouldBeSaved = (a: actionTypes.BaseAction) => {
@@ -126,7 +126,7 @@ export class Synchronizer {
     if (actions.length > 0) {
       this.actionQueue.push(...actions)
       if (autosave) {
-        this.save(sessionId, bots, dispatch)
+        this.save(sessionId, bots, shouldTriggerBot, dispatch)
       } else {
         dispatch(setStatusToUnsaved())
       }
@@ -170,7 +170,7 @@ export class Synchronizer {
    */
   public finishRegistration (
     state: State, autosave: boolean, sessionId: string,
-    bots: boolean, dispatch: ThunkDispatchType) {
+    bots: boolean, shouldTriggerBot: boolean, dispatch: ThunkDispatchType) {
     if (!this.registeredOnce) {
       // One-time setup after first registration
       this.registeredOnce = true
@@ -195,10 +195,10 @@ export class Synchronizer {
       }
 
       for (const actionPacket of this.listActionsPendingSave()) {
-        this.sendActions(actionPacket, sessionId, dispatch)
+        this.sendActions(actionPacket, sessionId, shouldTriggerBot, dispatch)
       }
       if (autosave) {
-        this.save(sessionId, bots, dispatch)
+        this.save(sessionId, bots, shouldTriggerBot, dispatch)
       }
     }
   }
@@ -284,7 +284,9 @@ export class Synchronizer {
    * Send all queued actions to the backend
    * and move actions to actionsPendingSave
    */
-  public save (sessionId: string, bots: boolean, dispatch: ThunkDispatchType) {
+  public save (
+    sessionId: string, bots: boolean,
+    shouldTriggerBot: boolean, dispatch: ThunkDispatchType) {
     if (this.socket.connected) {
       if (this.actionQueue.length > 0) {
         const packet: ActionPacketType = {
@@ -293,13 +295,10 @@ export class Synchronizer {
         }
         this.actionsPendingSave =
           this.actionsPendingSave.update(packet.id, packet)
-        // Add a switch for a new flag
-        // change doesPacketTriggerModel to false
-        // Also propagate flag to backend via packet
-        if (doesPacketTriggerModel(packet, bots)) {
+        if (bots && shouldTriggerBot && doesPacketTriggerModel(packet)) {
           this.actionsPendingPrediction.add(packet.id)
         }
-        this.sendActions(packet, sessionId, dispatch)
+        this.sendActions(packet, sessionId, shouldTriggerBot, dispatch)
         this.actionQueue = []
       }
     }
@@ -311,13 +310,14 @@ export class Synchronizer {
    */
   public sendActions (
     actionPacket: ActionPacketType,
-    sessionId: string, dispatch: ThunkDispatchType) {
+    sessionId: string, shouldTriggerBot: boolean,
+    dispatch: ThunkDispatchType) {
     const message: SyncActionMessageType = {
       taskId: index2str(this.taskIndex),
       projectName: this.projectName,
       sessionId,
       actions: actionPacket,
-      bot: false
+      shouldTriggerBot
     }
     this.socket.emit(EventName.ACTION_SEND, message)
     if (actionConsts.hasSubmitAction(actionPacket.actions)) {
