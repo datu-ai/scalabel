@@ -456,6 +456,8 @@ export interface UserType {
   layout: LayoutType
   /** Viewer configurations, only id 0 & 1 for now (main & assistant) */
   viewerConfigs: {[id: number]: ViewerConfigType}
+  /** Whether user has bot enabled */
+  bot: boolean
 }
 
 export interface ItemStatus {

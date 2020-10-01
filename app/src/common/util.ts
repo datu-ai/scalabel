@@ -98,14 +98,7 @@ export function index2str (index: number) {
  * any actions that would trigger a model query
  */
 export function doesPacketTriggerModel (
-  actionPacket: ActionPacketType, bots: boolean): boolean {
-  if (!bots) {
-    return false
-  }
-  for (const action of actionPacket.actions) {
-    if (action.type === ADD_LABELS) {
-      return true
-    }
-  }
-  return false
+actionPacket: ActionPacketType): boolean {
+  return actionPacket.actions.map(
+      (action) => action.type === ADD_LABELS).includes(true)
 }

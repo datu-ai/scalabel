@@ -25,8 +25,8 @@ export interface SyncActionMessageType {
   sessionId: string
   /** List of actions for synchronization */
   actions: ActionPacketType
-  /** whether it came from a bot or not */
-  bot: boolean
+  /** whether they should trigger bot actions */
+  shouldTriggerBot: boolean
 }
 
 /** type for transmitted packet of actions */

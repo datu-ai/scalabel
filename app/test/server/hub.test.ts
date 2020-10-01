@@ -126,7 +126,7 @@ describe('Test hub functionality', () => {
         actions: [action],
         id: actionListId
       },
-      bot: false
+      shouldTriggerBot: true
     }
 
     // Send the action
@@ -171,7 +171,7 @@ describe('Test hub functionality', () => {
         actions: [action],
         id: actionListId
       },
-      bot: false
+      shouldTriggerBot: true
     }
     await hub.actionUpdate(data, mockSocket)
     expect(mockProjectStore.saveState).not.toBeCalled()
@@ -191,7 +191,7 @@ describe('Test hub functionality', () => {
         actions: [action],
         id: actionListId
       },
-      bot: false
+      shouldTriggerBot: true
     }
 
     // Send message for the first time
@@ -241,7 +241,7 @@ describe('Test hub functionality', () => {
         actions: [action],
         id: actionListId
       },
-      bot: false
+      shouldTriggerBot: true
     }
 
     await hub.actionUpdate(data, mockSocket)
@@ -267,6 +267,6 @@ function packetToMessage (packet: ActionPacketType): SyncActionMessageType {
     projectName,
     sessionId,
     taskId: index2str(taskIndex),
-    bot: false
+    shouldTriggerBot: true
   }
 }

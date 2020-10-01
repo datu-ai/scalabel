@@ -50,6 +50,20 @@ export const getDashboardLink = createSelector(
 )
 
 /**
+ * Get whether user has bot enabled
+ */
+export function isBotEnabled (state: ReduxState): boolean {
+  return state.present.user.bot
+}
+
+/**
+ * Get whether bot is enabled globally
+ */
+export function isBotOnGlobal (state: ReduxState): boolean {
+  return state.present.task.config.bots
+}
+
+/**
  * Load the session
  */
 export function getSession (state: ReduxState): SessionType {

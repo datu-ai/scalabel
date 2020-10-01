@@ -71,6 +71,10 @@ function reduceOne (state: State, action: actionTypes.BaseAction): State {
       return common.updateSessionStatus(
         state, action as actionTypes.UpdateSessionStatusAction
       )
+    case actionConsts.TOGGLE_BOT:
+      return common.toggleBot(
+        state, action
+      )
     case actionConsts.NULL:
       return state
     default:

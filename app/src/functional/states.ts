@@ -533,6 +533,7 @@ function makeUser (params: Partial<UserType>= {}): UserType {
     select: makeSelect(),
     layout: makeLayout(),
     viewerConfigs: [],
+    bot: false,
     ...params
   }
 }
