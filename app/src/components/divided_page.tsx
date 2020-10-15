@@ -1,8 +1,9 @@
-import Drawer from '@material-ui/core/Drawer'
-import { withStyles } from '@material-ui/core/styles'
-import React, { ReactNode } from 'react'
-import { dividedPageStyle } from '../styles/navigation_page'
-import HeaderPage from './header_page'
+import Drawer from "@material-ui/core/Drawer"
+import { withStyles } from "@material-ui/core/styles"
+import React, { ReactNode } from "react"
+
+import { dividedPageStyle } from "../styles/navigation_page"
+import HeaderPage from "./header_page"
 
 export interface ClassType {
   /** sidebar class */
@@ -20,50 +21,42 @@ export interface ClassType {
 export interface DividedPageProps {
   /** divided page classes */
   classes: ClassType
-  /** divided page children */
-  children: {
-    /** divided page header content */
-    headerContent: ReactNode
-    /** divided page sidebar content */
-    sidebarContent: ReactNode
-    /** divided page main content */
-    mainContent: ReactNode
-  }
+  /** divided page header content */
+  header: ReactNode
+  /** divided page sidebar content */
+  sidebar: ReactNode
+  /** divided page main content */
+  main: ReactNode
 }
 
 /**
  * Renders a page divided into a header, a drawer, and the main content
+ *
  * @param props
  * @constructor
  */
-function DividedPage (props: DividedPageProps) {
-  const { classes, children } = props
-  const mainPageContent = (
-          <React.Fragment>
-            <Drawer
-                    className={classes.drawer}
-                    variant='permanent'
-                    anchor='left'
-                    classes={{
-                      paper: classes.drawerPaper
-                    }}
-            >
-              <div className={classes.drawerHeader}/>
-              {children.sidebarContent}
-            </Drawer>
-            <main className={classes.content}>
-              <div className={classes.appBarSpacer}/>
-              {children.mainContent}
-            </main>
-          </React.Fragment>
+function DividedPage(props: DividedPageProps): JSX.Element {
+  const { classes, header, sidebar, main } = props
+  const mainPage = (
+    <React.Fragment>
+      <Drawer
+        className={classes.drawer}
+        variant="permanent"
+        anchor="left"
+        classes={{
+          paper: classes.drawerPaper
+        }}
+      >
+        <div className={classes.drawerHeader} />
+        {sidebar}
+      </Drawer>
+      <main className={classes.content}>
+        <div className={classes.appBarSpacer} />
+        {main}
+      </main>
+    </React.Fragment>
   )
-  return (
-          <HeaderPage children={{
-            headerContent: children.headerContent,
-            pageContent: mainPageContent
-          }}
-          />
-  )
+  return <HeaderPage headerContent={header} pageContent={mainPage} />
 }
 
 /** export divided page */

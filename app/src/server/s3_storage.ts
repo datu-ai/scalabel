@@ -1,8 +1,9 @@
-import AWS from 'aws-sdk'
-import _ from 'lodash'
-import * as path from 'path'
-import Logger from './logger'
-import { Storage } from './storage'
+import AWS from "aws-sdk"
+import _ from "lodash"
+import * as path from "path"
+
+import Logger from "./logger"
+import { Storage } from "./storage"
 
 /**
  * Implements local file storage
@@ -17,37 +18,39 @@ export class S3Storage extends Storage {
 
   /**
    * Constructor
+   *
+   * @param dataPath
    */
-  constructor (dataPath: string) {
+  constructor(dataPath: string) {
     // Check s3 data path
-    const errorMsg =
-      `s3 data path format is incorrect:
+    const errorMsg = `s3 data path format is incorrect:
        Got:       ${dataPath}
        Should be: region:bucket/path`
     const error = Error(errorMsg)
-    const info = dataPath.split(':')
+    const info = dataPath.split(":")
     if (info.length < 2) {
-      throw (error)
+      throw error
     }
-    const bucketPath = info[1].split('/')
+    const bucketPath = info[1].split("/")
     if (bucketPath.length < 2) {
-      throw (error)
+      throw error
     }
-    const dataDir = path.join(...bucketPath.splice(1), '/')
+    const dataDir = path.join(...bucketPath.splice(1), "/")
     super(dataDir)
 
     this.region = info[0]
     this.bucketName = bucketPath[0]
 
     this.s3 = new AWS.S3({
-      httpOptions: { connectTimeout: 10000 }, maxRetries: 5
+      httpOptions: { connectTimeout: 10000 },
+      maxRetries: 5
     })
   }
 
   /**
    * Init bucket
    */
-  public async makeBucket (): Promise<void> {
+  public async makeBucket(): Promise<void> {
     // Create new bucket if there isn't one already (wait until it exists)
     const hasBucket = await this.hasBucket()
     if (!hasBucket) {
@@ -64,13 +67,12 @@ export class S3Storage extends Storage {
         Logger.error(error)
       }
     }
-    return
   }
 
   /**
    * Remove the bucket
    */
-  public async removeBucket (): Promise<void> {
+  public async removeBucket(): Promise<void> {
     const params = {
       Bucket: this.bucketName
     }
@@ -80,9 +82,11 @@ export class S3Storage extends Storage {
 
   /**
    * Check if specified file exists
+   *
    * @param {string} key: relative path of file
+   * @param key
    */
-  public async hasKey (key: string): Promise<boolean> {
+  public async hasKey(key: string): Promise<boolean> {
     const params = {
       Bucket: this.bucketName,
       Key: this.fullFile(key)
@@ -98,16 +102,19 @@ export class S3Storage extends Storage {
   /**
    * Lists keys of files at a directory specified by prefix
    * Split by files and directories
+   *
    * @param {string} prefix: relative path of directory
+   * @param prefix
    */
-  public async listKeysOrganized (
-    prefix: string): Promise<[string[], string[]]> {
+  public async listKeysOrganized(
+    prefix: string
+  ): Promise<[string[], string[]]> {
     const fullPrefix = this.fullDir(prefix)
-    let continuationToken = ''
+    let continuationToken = ""
 
     let dirKeys = []
     let fileKeys = []
-    for (; ;) {
+    for (;;) {
       let data
       if (continuationToken.length > 0) {
         const params = {
@@ -124,20 +131,20 @@ export class S3Storage extends Storage {
         data = await this.s3.listObjectsV2(params).promise()
       }
 
-      if (data.Contents) {
+      if (data.Contents !== undefined) {
         for (const key of data.Contents) {
           // Remove any file extension and prepend prefix
-          if (key.Key) {
+          if (key.Key !== undefined) {
             const noPrefix = key.Key.substr(fullPrefix.length)
 
             // Parse to get the top level dir or file after prefix
             const parsed = path.parse(noPrefix)
             let keyName = parsed.name
             let isDir = false
-            if (parsed.dir.length > 0 && parsed.dir !== '/') {
-              const split = parsed.dir.split('/')
+            if (parsed.dir.length > 0 && parsed.dir !== "/") {
+              const split = parsed.dir.split("/")
               keyName = split[0]
-              if (keyName === '') {
+              if (keyName === "") {
                 // This handles the case of an extra leading slash: '/dirname'
                 keyName = split[1]
               }
@@ -153,11 +160,11 @@ export class S3Storage extends Storage {
         }
       }
 
-      if (!data.IsTruncated) {
+      if (data.IsTruncated === undefined || !data.IsTruncated) {
         break
       }
 
-      if (data.NextContinuationToken) {
+      if (data.NextContinuationToken !== undefined) {
         continuationToken = data.NextContinuationToken
       }
     }
@@ -171,11 +178,16 @@ export class S3Storage extends Storage {
 
   /**
    * Lists keys of files at directory specified by prefix
+   *
    * @param {string} prefix: relative path of directory
    * @param {boolean} onlyDir: whether to only return keys that are directories
+   * @param prefix
+   * @param onlyDir
    */
-  public async listKeys (
-    prefix: string, onlyDir: boolean = false): Promise<string[]> {
+  public async listKeys(
+    prefix: string,
+    onlyDir: boolean = false
+  ): Promise<string[]> {
     const [dirKeys, fileKeys] = await this.listKeysOrganized(prefix)
     if (onlyDir) {
       return dirKeys
@@ -188,44 +200,53 @@ export class S3Storage extends Storage {
 
   /**
    * Saves json to at location specified by key
+   *
    * @param {string} key: relative path of file
    * @param {string} json: data to save
+   * @param key
+   * @param json
    */
-  public async save (key: string, json: string): Promise<void> {
+  public async save(key: string, json: string): Promise<void> {
     const params = {
       Body: json,
       Bucket: this.bucketName,
       Key: this.fullFile(key)
     }
-    return this.s3.putObject(params).promise().then()
+    await this.s3.putObject(params).promise()
   }
 
   /**
    * Loads fields stored at a key
+   *
    * @param {string} key: relative path of file
+   * @param key
    */
-  public async load (key: string): Promise<string> {
+  public async load(key: string): Promise<string> {
     const params: AWS.S3.GetObjectRequest = {
       Bucket: this.bucketName,
       Key: this.fullFile(key)
     }
 
-    if (!await this.hasKey(key)) {
+    if (!(await this.hasKey(key))) {
       throw new Error(`Key '${params.Key}' does not exist`)
     }
     const data = await this.s3.getObject(params).promise()
-    if (!data || !data.Body) {
+    if (data.Body === undefined) {
       throw new Error(`No data at key '${params.Key}'`)
+    } else {
+      // This eslint problem seems to be a type error in s3
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      return data.Body.toString()
     }
-
-    return data.Body.toString()
   }
 
   /**
    * Deletes values at the key
+   *
    * @param {string} key: relative path of directory
+   * @param key
    */
-  public async delete (key: string): Promise<void> {
+  public async delete(key: string): Promise<void> {
     const [dirKeys, fileKeys] = await this.listKeysOrganized(key)
 
     const promises = []
@@ -237,9 +258,11 @@ export class S3Storage extends Storage {
         Key: this.fullFile(subKey)
       }
       const deletePromise = this.s3.deleteObject(params).promise()
-      promises.push(deletePromise.then(async () => {
-        await this.s3.waitFor('objectNotExists', params).promise()
-      }))
+      promises.push(
+        deletePromise.then(async () => {
+          await this.s3.waitFor("objectNotExists", params).promise()
+        })
+      )
     }
 
     // Recursively delete subdirectories
@@ -247,25 +270,26 @@ export class S3Storage extends Storage {
       promises.push(this.delete(subKey))
     }
 
-    return Promise.all(promises).then(() => { return })
+    await Promise.all(promises)
   }
 
   /**
    * make an empty folder object on s3
+   *
    * @param key
    */
-  public async mkdir (key: string): Promise<void> {
+  public async mkdir(key: string): Promise<void> {
     const params = {
       Bucket: this.bucketName,
-      Key: this.fullDir(key) + '/'
+      Key: this.fullDir(key) + "/"
     }
-    return this.s3.putObject(params).promise().then()
+    await this.s3.putObject(params).promise()
   }
 
   /**
    * Checks if bucket exists
    */
-  private async hasBucket (): Promise<boolean> {
+  private async hasBucket(): Promise<boolean> {
     const params = {
       Bucket: this.bucketName
     }

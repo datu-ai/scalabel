@@ -1,4 +1,4 @@
-import { LabelExport } from './bdd'
+import { LabelExport } from "./export"
 
 /** Data kept by each bot user */
 export interface BotData {
@@ -29,14 +29,14 @@ export interface ModelQuery {
  * One model can support multiple queries
  */
 export const enum QueryType {
-  PREDICT_POLY = 'predictPoly',
-  REFINE_POLY = 'refinePoly'
+  PREDICT_POLY = "predictPoly",
+  REFINE_POLY = "refinePoly"
 }
 
 /**
  * The supported model types
  */
 export enum ModelType {
-  INSTANCE_SEGMENTATION = 'INSTANCE_SEGMENTATION',
-  OBJECT_DETECTION_2D = 'OBJECT_DETECTION_2D'
+  INSTANCE_SEGMENTATION = "INSTANCE_SEGMENTATION",
+  OBJECT_DETECTION_2D = "OBJECT_DETECTION_2D"
 }

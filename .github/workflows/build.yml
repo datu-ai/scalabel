@@ -26,10 +26,17 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           pip install --ignore-installed -r scripts/requirements.txt
-      - name: Lint with pylint and mypy
+      - name: Lint
         run: |
           python3 -m pylint scalabel
+          python3 -m pydocstyle --convention=google scalabel
           python3 -m mypy --strict scalabel
+          python3 -m black --check scalabel
+          python3 -m isort -c scalabel/**/*.py
+      - name: Build
+        run: python3 setup.py sdist bdist_wheel
+      - name: Test
+        run: python3 -m pytest --pyargs scalabel
 
   nodejs:
     runs-on: ubuntu-latest
@@ -66,11 +73,12 @@ jobs:
             auth_header="$(git config --local --get http.https://github.com/.extraheader)"
             ./proto/build.sh
       - name: Lint
-        run: node_modules/.bin/tslint --project tsconfig.json --config tslint.json
+        run: |
+          npx eslint -c .eslintrc.json --ext .ts,.tsx app/src app/test
       - name: Test
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: npm test
       - name: Build
-        run: node_modules/.bin/webpack --config webpack.config.js --mode=production
+        run: npx webpack --config webpack.config.js --mode=production

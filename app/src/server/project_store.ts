@@ -1,15 +1,25 @@
-import _ from 'lodash'
-import { filterXSS } from 'xss'
-import { StorageStructure } from '../const/storage'
-import { makeItemStatus, makeState } from '../functional/states'
-import { Project, StateMetadata, UserData, UserMetadata } from '../types/project'
-import { State, TaskType } from '../types/state'
-import Logger from './logger'
-import * as path from './path'
-import { RedisCache } from './redis_cache'
-import { Storage } from './storage'
+import _ from "lodash"
+import { filterXSS } from "xss"
+
+import { StorageStructure } from "../const/storage"
+import { makeItemStatus, makeState } from "../functional/states"
 import {
-  getPolicy, makeUserData, makeUserMetadata, safeParseJSON } from './util'
+  Project,
+  StateMetadata,
+  UserData,
+  UserMetadata
+} from "../types/project"
+import { State, TaskType } from "../types/state"
+import Logger from "./logger"
+import * as path from "./path"
+import { RedisCache } from "./redis_cache"
+import { Storage } from "./storage"
+import {
+  getPolicy,
+  makeUserData,
+  makeUserMetadata,
+  safeParseJSON
+} from "./util"
 
 /**
  * Wraps redis cache and storage basic functionality
@@ -21,7 +31,13 @@ export class ProjectStore {
   /** the permanent storage */
   protected storage: Storage
 
-  constructor (storage: Storage, redisStore: RedisCache) {
+  /**
+   * Constructor
+   *
+   * @param storage
+   * @param redisStore
+   */
+  constructor(storage: Storage, redisStore: RedisCache) {
     this.storage = storage
     this.redisStore = redisStore
   }
@@ -30,10 +46,18 @@ export class ProjectStore {
    * Saves key-value pair
    * If cache is true, saves to redis, which writes back later
    * Otherwise immediately write back to storage
+   *
+   * @param key
+   * @param value
+   * @param cache
+   * @param metadata
    */
-  public async save (
-    key: string, value: string,
-    cache= false, metadata= '') {
+  public async save(
+    key: string,
+    value: string,
+    cache = false,
+    metadata = ""
+  ): Promise<void> {
     if (cache) {
       const metaKey = path.getRedisMetaKey(key)
       await this.redisStore.set(key, value)
@@ -45,10 +69,18 @@ export class ProjectStore {
 
   /**
    * Helper function for saving the state
+   *
+   * @param state
+   * @param projectName
+   * @param taskId
+   * @param stateMetadata
    */
-  public async saveState (
-    state: State, projectName: string,
-    taskId: string, stateMetadata: StateMetadata) {
+  public async saveState(
+    state: State,
+    projectName: string,
+    taskId: string,
+    stateMetadata: StateMetadata
+  ): Promise<void> {
     const stringState = JSON.stringify(state)
     const stringMetadata = JSON.stringify(stateMetadata)
     const saveDir = path.getSaveDir(projectName, taskId)
@@ -57,10 +89,14 @@ export class ProjectStore {
 
   /**
    * Load the metadata associated with a particular state
+   *
+   * @param projectName
+   * @param taskId
    */
-
-  public async loadStateMetadata (
-    projectName: string, taskId: string): Promise<StateMetadata> {
+  public async loadStateMetadata(
+    projectName: string,
+    taskId: string
+  ): Promise<StateMetadata> {
     const saveDir = path.getSaveDir(projectName, taskId)
     const metaKey = path.getRedisMetaKey(saveDir)
     let stateMetadata: StateMetadata = {
@@ -68,34 +104,30 @@ export class ProjectStore {
       taskId,
       actionIds: {}
     }
-    if (this.redisStore) {
-      const stringStateMetadata = await this.redisStore.get(metaKey)
-      if (stringStateMetadata === null) {
-        // TODO: principled error handling for state loading
-        return stateMetadata
-      }
-      const loadedMetadata = JSON.parse(stringStateMetadata)
-      if (loadedMetadata) {
-        stateMetadata = loadedMetadata
-      }
+    const stringStateMetadata = await this.redisStore.get(metaKey)
+    if (stringStateMetadata === null) {
+      // TODO: principled error handling for state loading
+      return stateMetadata
     }
+    stateMetadata = { stateMetadata, ...JSON.parse(stringStateMetadata) }
     return stateMetadata
   }
 
   /**
    * Loads state from redis if available, else memory
+   *
+   * @param projectName
+   * @param taskId
    */
-  public async loadState (projectName: string, taskId: string): Promise<State> {
+  public async loadState(projectName: string, taskId: string): Promise<State> {
     let state: State
 
     // First try to load from redis
     const saveDir = path.getSaveDir(projectName, taskId)
     let redisValue = null
-    if (this.redisStore) {
-      redisValue = await this.redisStore.get(saveDir)
-    }
-    if (redisValue) {
-      state = safeParseJSON(redisValue)
+    redisValue = await this.redisStore.get(saveDir)
+    if (redisValue !== null) {
+      state = safeParseJSON(redisValue) as State
     } else {
       // Otherwise load from storage
       try {
@@ -112,30 +144,35 @@ export class ProjectStore {
 
   /**
    * Checks whether project name is unique
+   *
+   * @param projectName
    */
-  public checkProjectName (projectName: string): Promise<boolean> {
+  public async checkProjectName(projectName: string): Promise<boolean> {
     // Check if project.json exists in the project folder
     const key = path.getProjectKey(projectName)
-    return this.storage.hasKey(key)
+    return await this.storage.hasKey(key)
   }
 
   /**
    * Reads projects from server's disk
    */
-  public async getExistingProjects (): Promise<string[]> {
+  public async getExistingProjects(): Promise<string[]> {
     // All new projects will be in the projects/ sub folder
     const files = await this.storage.listKeys(StorageStructure.PROJECT, true)
     // Remove any xss vulnerability
-    const names = files.map((f) => filterXSS(
-      f.slice(StorageStructure.PROJECT.length + 1)))
+    const names = files.map((f) =>
+      filterXSS(f.slice(StorageStructure.PROJECT.length + 1))
+    )
     Logger.info(`Found ${names.length} projects`)
     return names
   }
 
   /**
    * Loads the project
+   *
+   * @param projectName
    */
-  public async loadProject (projectName: string) {
+  public async loadProject(projectName: string): Promise<Project> {
     const key = path.getProjectKey(projectName)
     const fields = await this.storage.load(key)
     const loadedProject = safeParseJSON(fields) as Project
@@ -144,8 +181,10 @@ export class ProjectStore {
 
   /**
    * Saves the project
+   *
+   * @param project
    */
-  public async saveProject (project: Project) {
+  public async saveProject(project: Project): Promise<void> {
     const key = path.getProjectKey(project.config.projectName)
     const data = JSON.stringify(project, null, 2)
     await this.save(key, data)
@@ -153,18 +192,19 @@ export class ProjectStore {
 
   /**
    * gets all tasks in project sorted by index
+   *
    * @param projectName
    */
-  public async getTasksInProject (
-    projectName: string): Promise<TaskType[]> {
+  public async getTasksInProject(projectName: string): Promise<TaskType[]> {
     const taskPromises: Array<Promise<TaskType>> = []
     const taskDir = path.getTaskDir(projectName)
     const keys = await this.storage.listKeys(taskDir, false)
     // Iterate over all keys and load each task asynchronously
     for (const key of keys) {
-      taskPromises.push(this.storage.load(key).then((fields) => {
-        return safeParseJSON(fields) as TaskType
-      })
+      taskPromises.push(
+        this.storage.load(key).then((fields) => {
+          return safeParseJSON(fields) as TaskType
+        })
       )
     }
     const tasks = await Promise.all(taskPromises)
@@ -179,12 +219,17 @@ export class ProjectStore {
    * Get the latest state for each task in the project
    * Check redis first, then memory
    * If there is no saved state for a task, returns the initial task
+   *
+   * @param projectName
    */
-  public async loadTaskStates (projectName: string): Promise<TaskType[]> {
+  public async loadTaskStates(projectName: string): Promise<TaskType[]> {
     const tasks = await this.getTasksInProject(projectName)
 
-    const savedStatePromises = _.map(tasks, (emptyTask) =>
-      this.loadState(projectName, emptyTask.config.taskId))
+    const savedStatePromises = _.map(
+      tasks,
+      async (emptyTask) =>
+        await this.loadState(projectName, emptyTask.config.taskId)
+    )
     const savedStates = await Promise.all(savedStatePromises)
     const savedTasks = _.map(savedStates, (state) => state.task)
     return savedTasks
@@ -192,8 +237,10 @@ export class ProjectStore {
 
   /**
    * Saves a list of tasks
+   *
+   * @param tasks
    */
-  public async saveTasks (tasks: TaskType[]) {
+  public async saveTasks(tasks: TaskType[]): Promise<void> {
     const promises: Array<Promise<void>> = []
     for (const task of tasks) {
       const key = path.getTaskKey(task.config.projectName, task.config.taskId)
@@ -205,9 +252,14 @@ export class ProjectStore {
 
   /**
    * Loads a task
+   *
+   * @param projectName
+   * @param taskId
    */
-  public async loadTask (
-    projectName: string, taskId: string): Promise<TaskType> {
+  public async loadTask(
+    projectName: string,
+    taskId: string
+  ): Promise<TaskType> {
     const key = path.getTaskKey(projectName, taskId)
     const taskData = await this.storage.load(key)
     const task = safeParseJSON(taskData) as TaskType
@@ -218,11 +270,13 @@ export class ProjectStore {
    * Load user data for the project
    * Stored at project/userData.json
    * If it doesn't exist, return default empty object
+   *
+   * @param projectName
    */
-  public async loadUserData (projectName: string): Promise<UserData> {
+  public async loadUserData(projectName: string): Promise<UserData> {
     const key = path.getUserKey(projectName)
     const userDataJSON = await this.storage.safeLoad(key)
-    if (userDataJSON) {
+    if (userDataJSON !== "") {
       return safeParseJSON(userDataJSON) as UserData
     }
     return makeUserData(projectName)
@@ -230,8 +284,10 @@ export class ProjectStore {
 
   /**
    * Saves user data for the project
+   *
+   * @param userData
    */
-  public async saveUserData (userData: UserData) {
+  public async saveUserData(userData: UserData): Promise<void> {
     const projectName = userData.projectName
     const key = path.getUserKey(projectName)
     await this.save(key, JSON.stringify(userData))
@@ -241,26 +297,24 @@ export class ProjectStore {
    * Loads metadata shared between all projects
    * Stored at top level, metaData.json
    */
-  public async loadUserMetadata (): Promise<UserMetadata> {
+  public async loadUserMetadata(): Promise<UserMetadata> {
     const key = path.getMetaKey()
     const metaDataJSON = await this.storage.safeLoad(key)
-    if (!metaDataJSON) {
+    if (metaDataJSON === "") {
       return makeUserMetadata()
     }
     // Handle backwards compatibility
-    const userMetadata = safeParseJSON(metaDataJSON)
-    if (_.has(userMetadata, 'socketToProject')) {
-      // New code saves as an object, which allows extensions
-      return userMetadata
-    }
-    // Old code saved map of projects directly
-    return { socketToProject: userMetadata }
+    const userMetadata = safeParseJSON(metaDataJSON) as UserMetadata
+    // New code saves as an object, which allows extensions
+    return userMetadata
   }
 
   /**
    * Saves metadata shared between all projects
+   *
+   * @param userMetadata
    */
-  public async saveUserMetadata (userMetadata: UserMetadata) {
+  public async saveUserMetadata(userMetadata: UserMetadata): Promise<void> {
     const key = path.getMetaKey()
     await this.save(key, JSON.stringify(userMetadata))
   }
@@ -268,8 +322,10 @@ export class ProjectStore {
   /**
    * Loads the most recent state for the given task. If no such submission throw
    * an error.
+   *
+   * @param saveDir
    */
-  private async loadSavedState (saveDir: string): Promise<State> {
+  private async loadSavedState(saveDir: string): Promise<State> {
     const keys = await this.storage.listKeys(saveDir, false)
     if (keys.length === 0) {
       throw new Error(`No submissions found in dir ${saveDir}`)
@@ -282,8 +338,10 @@ export class ProjectStore {
   /**
    * Loads the state from task.json (created at import)
    * Used for first load
+   *
+   * @param taskKey
    */
-  private async loadStateFromTask (taskKey: string): Promise<State> {
+  private async loadStateFromTask(taskKey: string): Promise<State> {
     const fields = await this.storage.load(taskKey)
     const task = safeParseJSON(fields) as TaskType
     const state = makeState({ task })
@@ -298,8 +356,11 @@ export class ProjectStore {
     }
 
     const [trackPolicy, labelTypes] = getPolicy(
-      state.task.config.itemType, state.task.config.labelTypes,
-      state.task.config.policyTypes, state.task.config.label2DTemplates)
+      state.task.config.itemType,
+      state.task.config.labelTypes,
+      state.task.config.policyTypes,
+      state.task.config.label2DTemplates
+    )
     state.task.config.policyTypes = trackPolicy
     state.task.config.labelTypes = labelTypes
 

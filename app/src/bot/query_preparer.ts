@@ -1,4 +1,5 @@
-import { ModelQuery, QueryType } from '../types/bot'
+import { ModelQuery, QueryType } from "../types/bot"
+import { LabelExport } from "../types/export"
 
 // Map from item index to queries for the item
 type QueriesByItem = Map<number, ItemQueries>
@@ -19,17 +20,22 @@ interface ItemQueries {
  */
 export class QueryPreparer {
   /** Internal format for the queries */
-  private queriesByType: QueriesByType
+  private readonly queriesByType: QueriesByType
 
-  constructor () {
+  /**
+   * Constructor
+   */
+  constructor() {
     this.queriesByType = new Map()
   }
 
   /**
    * Add a new query to the batch
+   *
+   * @param query
    */
-  public addQuery (query: ModelQuery | null) {
-    if (!query) {
+  public addQuery(query: ModelQuery | null): void {
+    if (query === null) {
       return
     }
     const defaultQueriesByItem: QueriesByItem = new Map()
@@ -37,10 +43,10 @@ export class QueryPreparer {
       this.queriesByType.get(query.type) ?? defaultQueriesByItem
 
     const defaultItemQueries: ItemQueries = {
-      url: query.url, queries: []
+      url: query.url,
+      queries: []
     }
-    const itemQueries =
-      queriesByItem.get(query.itemIndex) ?? defaultItemQueries
+    const itemQueries = queriesByItem.get(query.itemIndex) ?? defaultItemQueries
 
     itemQueries.queries.push(query)
     queriesByItem.set(query.itemIndex, itemQueries)
@@ -50,29 +56,35 @@ export class QueryPreparer {
   /**
    * Get all the types of queries in the batch
    */
-  public getQueryTypes () {
+  public getQueryTypes(): QueryType[] {
     return Array.from(this.queriesByType.keys())
   }
 
   /**
    * Get the list of urls for a query type
+   *
+   * @param queryType
    */
-  public getUrls (queryType: QueryType) {
+  public getUrls(queryType: QueryType): string[] {
     return this.getItemQueries(queryType).map((itemQuery) => itemQuery.url)
   }
 
   /**
    * Get the item indices for each url for a query type
+   *
+   * @param queryType
    */
-  public getItemIndices (queryType: QueryType) {
+  public getItemIndices(queryType: QueryType): number[] {
     return Array.from(this.queriesByType.get(queryType)?.keys() ?? [])
   }
 
   /**
    * Get the lists of labels for a query type
    * Should have the same length as the url list
+   *
+   * @param queryType
    */
-  public getLabelLists (queryType: QueryType) {
+  public getLabelLists(queryType: QueryType): LabelExport[][] {
     return this.getItemQueries(queryType).map((itemQuery) =>
       itemQuery.queries.map((query) => query.label)
     )
@@ -80,8 +92,10 @@ export class QueryPreparer {
 
   /**
    * Get the label IDs corresponding to the label lists for a query type
+   *
+   * @param queryType
    */
-  public getLabelIds (queryType: QueryType) {
+  public getLabelIds(queryType: QueryType): string[][] {
     return this.getItemQueries(queryType).map((itemQuery) =>
       itemQuery.queries.map((query) => query.label.id as string)
     )
@@ -89,8 +103,10 @@ export class QueryPreparer {
 
   /**
    * Get the item queries for a query type
+   *
+   * @param queryType
    */
-  private getItemQueries (queryType: QueryType) {
+  private getItemQueries(queryType: QueryType): ItemQueries[] {
     return Array.from(this.queriesByType.get(queryType)?.values() ?? [])
   }
 }

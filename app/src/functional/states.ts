@@ -1,12 +1,16 @@
-import { bool } from 'aws-sdk/clients/signer'
-import _ from 'lodash'
-import { uid } from '../common/uid'
-import * as types from '../const/common'
-import { ItemExport, LabelExport } from '../types/bdd'
+import { bool } from "aws-sdk/clients/signer"
+import _ from "lodash"
+
+import { uid } from "../common/uid"
+import * as types from "../const/common"
+import { ItemExport, LabelExport } from "../types/export"
 import {
   Attribute,
-  ConfigType, ConnectionStatus, CubeType,
-  ExtrinsicsType, HomographyViewerConfigType,
+  ConfigType,
+  ConnectionStatus,
+  CubeType,
+  ExtrinsicsType,
+  HomographyViewerConfigType,
   IdType,
   Image3DViewerConfigType,
   ImageViewerConfigType,
@@ -37,18 +41,21 @@ import {
   TrackType,
   UserType,
   ViewerConfigType
-} from '../types/state'
-import { taskIdToString } from './id2string'
+} from "../types/state"
+import { taskIdToString } from "./id2string"
 
 /**
  * Initialize a label state and deep copy the parameters.
  * Every label has an id when it is born.
+ *
  * @param {Partial<LabelType>} params
  * @param {boolean} newId create new id even if it is in params
- * @return {LabelType}
+ * @returns {LabelType}
  */
-export function makeLabel (params: Partial<LabelType> = {},
-                           newId: boolean = true): LabelType {
+export function makeLabel(
+  params: Partial<LabelType> = {},
+  newId: boolean = true
+): LabelType {
   const label: LabelType = {
     id: genLabelId(),
     item: -1,
@@ -73,12 +80,15 @@ export function makeLabel (params: Partial<LabelType> = {},
 /**
  * Initialize a track
  * Every track has an id when it is born
+ *
  * @param {Partial<TrackType>} params
  * @param {boolean} newId create new id even if it is in params
  * Labels can not be filled without specifying id
  */
-export function makeTrack (params: Partial<TrackType> = {},
-                           newId: boolean = true): TrackType {
+export function makeTrack(
+  params: Partial<TrackType> = {},
+  newId: boolean = true
+): TrackType {
   const track: TrackType = {
     id: genTrackId(),
     type: types.LabelTypeName.EMPTY,
@@ -94,13 +104,17 @@ export function makeTrack (params: Partial<TrackType> = {},
 /**
  * Make an empty shape
  * Every shape has an id when it is born
+ *
  * @param {string} shapeType type name of the shape
+ * @param params
  * @param {boolean} newId create new id even if it is in params
  * @param {bool} new
  */
-export function makeShape (shapeType: string = '',
-                           params: Partial<ShapeType> = {},
-                           newId: bool = true): ShapeType {
+export function makeShape(
+  shapeType: string = "",
+  params: Partial<ShapeType> = {},
+  newId: bool = true
+): ShapeType {
   const shape = {
     label: [],
     shapeType,
@@ -114,11 +128,15 @@ export function makeShape (shapeType: string = '',
 }
 /**
  * Initialize a rectangle shape
+ *
  * @param {{}} params
- * @return {RectType}
+ * @param newId
+ * @returns {RectType}
  */
-export function makeRect (
-    params: Partial<RectType> = {}, newId: bool = true): RectType {
+export function makeRect(
+  params: Partial<RectType> = {},
+  newId: bool = true
+): RectType {
   return {
     x1: -1,
     y1: -1,
@@ -130,11 +148,11 @@ export function makeRect (
 
 /**
  * Initialize a polygon
+ *
  * @param {{}} params
- * @return {PolygonType}
+ * @returns {PolygonType}
  */
-export function makePolygon
-  (params: Partial<PolygonType> = {}): PolygonType {
+export function makePolygon(params: Partial<PolygonType> = {}): PolygonType {
   return {
     points: [],
     ...makeShape(types.ShapeTypeName.POLYGON_2D),
@@ -144,11 +162,13 @@ export function makePolygon
 
 /**
  * Initialize a polygon
+ *
  * @param {{}} params
- * @return {PolygonType}
+ * @returns {PolygonType}
  */
-export function makePathPoint2D (
-    params: Partial<PathPoint2DType> = {}): PathPoint2DType {
+export function makePathPoint2D(
+  params: Partial<PathPoint2DType> = {}
+): PathPoint2DType {
   return {
     x: -1,
     y: -1,
@@ -160,35 +180,42 @@ export function makePathPoint2D (
 
 /**
  * Driver function to make a simple path point
+ *
  * @param x
  * @param y
  * @param pointType
  */
-export function makeSimplePathPoint2D (
-  x: number, y: number, pointType: PathPointType): SimplePathPoint2DType {
+export function makeSimplePathPoint2D(
+  x: number,
+  y: number,
+  pointType: PathPointType
+): SimplePathPoint2DType {
   return { x, y, pointType }
 }
 
 /**
  * Initialize a pathPoint shape
+ *
  * @param params
  */
-export function makePolyPathPoint (params: Partial<PolyPathPoint2DType> = {})
-  : PolyPathPoint2DType {
+export function makePolyPathPoint(
+  params: Partial<PolyPathPoint2DType> = {}
+): PolyPathPoint2DType {
   return {
     x: -1,
     y: -1,
-    pointType: 'vertex',
+    pointType: "vertex",
     ...params
   }
 }
 
 /**
  * Initialize a 3d box shape
+ *
  * @param {{}} params
- * @return {CubeType}
+ * @returns {CubeType}
  */
-export function makeCube (params: Partial<CubeType> = {}): CubeType {
+export function makeCube(params: Partial<CubeType> = {}): CubeType {
   return {
     center: { x: 0, y: 0, z: 0 },
     size: { x: 1, y: 1, z: 1 },
@@ -201,10 +228,11 @@ export function makeCube (params: Partial<CubeType> = {}): CubeType {
 
 /**
  * Initialize a 3d box shape
+ *
  * @param {{}} params
- * @return {Plane3DType}
+ * @returns {Plane3DType}
  */
-export function makePlane (params: {} = {}): Plane3DType {
+export function makePlane(params: {} = {}): Plane3DType {
   return {
     center: { x: 0, y: 0, z: 0 },
     orientation: { x: 0, y: 0, z: 0 },
@@ -215,11 +243,12 @@ export function makePlane (params: {} = {}): Plane3DType {
 
 /**
  * Make a Node2D type
+ *
  * @param params
  */
-export function makeNode2d (params: Partial<Node2DType> = {}): Node2DType {
+export function makeNode2d(params: Partial<Node2DType> = {}): Node2DType {
   return {
-    name: '',
+    name: "",
     hidden: false,
     x: -1,
     y: -1,
@@ -230,11 +259,14 @@ export function makeNode2d (params: Partial<Node2DType> = {}): Node2DType {
 
 /**
  * Create data source
+ *
  * @param id
  * @param type
  * @param name
+ * @param intrinsics
+ * @param extrinsics
  */
-export function makeSensor (
+export function makeSensor(
   id: number,
   name: string,
   type: string,
@@ -246,10 +278,14 @@ export function makeSensor (
 
 /**
  * Make a new viewer config
- * @return {ImageViewerConfigType}
+ *
+ * @param pane
+ * @param sensor
+ * @returns {ImageViewerConfigType}
  */
-export function makeImageViewerConfig (
-  pane: number, sensor: number = -1
+export function makeImageViewerConfig(
+  pane: number,
+  sensor: number = -1
 ): ImageViewerConfigType {
   return {
     imageWidth: 0,
@@ -268,10 +304,14 @@ export function makeImageViewerConfig (
 
 /**
  * Make a new point cloud viewer config
- * @return {PointCloudViewerConfigType}
+ *
+ * @param pane
+ * @param sensor
+ * @returns {PointCloudViewerConfigType}
  */
-export function makePointCloudViewerConfig (
-  pane: number, sensor: number = -1
+export function makePointCloudViewerConfig(
+  pane: number,
+  sensor: number = -1
 ): PointCloudViewerConfigType {
   return {
     position: { x: 0.0, y: 0.0, z: 0.0 },
@@ -291,11 +331,13 @@ export function makePointCloudViewerConfig (
 
 /**
  * Make image 3d viewer config
+ *
  * @param pane
  * @param sensor
  */
-export function makeImage3DViewerConfig (
-  pane: number, sensor: number = -1
+export function makeImage3DViewerConfig(
+  pane: number,
+  sensor: number = -1
 ): Image3DViewerConfigType {
   const imageConfig = makeImageViewerConfig(pane, sensor)
   return {
@@ -307,11 +349,15 @@ export function makeImage3DViewerConfig (
 
 /**
  * Make homography viewer config
+ *
  * @param pane
  * @param sensor
+ * @param distance
  */
-export function makeHomographyViewerConfig (
-  pane: number, sensor: number = -1, distance: number = 10
+export function makeHomographyViewerConfig(
+  pane: number,
+  sensor: number = -1,
+  distance: number = 10
 ): HomographyViewerConfigType {
   const imageConfig = makeImageViewerConfig(pane, sensor)
   return {
@@ -324,13 +370,16 @@ export function makeHomographyViewerConfig (
 
 /**
  * Create default viewer config for item type
+ *
  * @param sensors
  * @param type
  * @param pane
  * @param sensor
  */
-export function makeDefaultViewerConfig (
-  type: types.ViewerConfigTypeName, pane: number = 0, sensor: number = -1
+export function makeDefaultViewerConfig(
+  type: types.ViewerConfigTypeName,
+  pane: number = 0,
+  sensor: number = -1
 ): ViewerConfigType | null {
   switch (type) {
     case types.ViewerConfigTypeName.IMAGE:
@@ -347,14 +396,16 @@ export function makeDefaultViewerConfig (
 
 /**
  * Make a default attribute
+ *
+ * @param params
  */
-export function makeAttribute (params: Partial<Attribute> = {}): Attribute {
+export function makeAttribute(params: Partial<Attribute> = {}): Attribute {
   return {
     toolType: types.AttributeToolType.SWITCH,
-    name: '',
+    name: "",
     values: [],
-    tagText: '',
-    tagPrefix: '',
+    tagText: "",
+    tagPrefix: "",
     tagSuffixes: [],
     buttonColors: [],
     ...params
@@ -362,16 +413,19 @@ export function makeAttribute (params: Partial<Attribute> = {}): Attribute {
 }
 /**
  * Initialize an item state
+ *
  * @param {{}} params
  * @param {boolean} keepId Use the input param id instead of generating a new ID
- * @return {ItemType}
+ * @returns {ItemType}
  */
-export function makeItem (params: Partial<ItemType> = {},
-                          keepId: boolean = false): ItemType {
+export function makeItem(
+  params: Partial<ItemType> = {},
+  keepId: boolean = false
+): ItemType {
   const item: ItemType = {
     id: genItemId(),
     index: 0,
-    videoName: '',
+    videoName: "",
     urls: {},
     labels: {},
     shapes: {},
@@ -386,14 +440,15 @@ export function makeItem (params: Partial<ItemType> = {},
 
 /**
  * Initialize an exportable item
+ *
  * @param {{}} params
- * @return {ItemExport}
+ * @returns {ItemExport}
  */
-export function makeItemExport (params: Partial<ItemExport> = {}): ItemExport {
+export function makeItemExport(params: Partial<ItemExport> = {}): ItemExport {
   return {
-    name: '',
-    url: '',
-    videoName: '',
+    name: "",
+    url: "",
+    videoName: "",
     sensor: -1,
     attributes: {},
     timestamp: -1,
@@ -404,14 +459,16 @@ export function makeItemExport (params: Partial<ItemExport> = {}): ItemExport {
 
 /**
  * Initialize an exportable label
+ *
  * @param {{}} params
- * @return {ItemExport}
+ * @returns {ItemExport}
  */
-export function makeLabelExport (
-  params: Partial<LabelExport> = {}): LabelExport {
+export function makeLabelExport(
+  params: Partial<LabelExport> = {}
+): LabelExport {
   return {
     id: INVALID_ID,
-    category: '',
+    category: "",
     attributes: {},
     manualShape: true,
     box2d: null,
@@ -425,25 +482,26 @@ export function makeLabelExport (
 
 /**
  * Make Sat configuration state
+ *
  * @param {{}} params
- * @return {ConfigType}
+ * @returns {ConfigType}
  */
-export function makeTaskConfig (params: Partial<ConfigType> = {}): ConfigType {
+export function makeTaskConfig(params: Partial<ConfigType> = {}): ConfigType {
   return {
-    projectName: '',
-    itemType: '',
+    projectName: "",
+    itemType: "",
     labelTypes: [],
     label2DTemplates: {},
     policyTypes: [],
     taskSize: 0,
     tracking: false,
-    handlerUrl: '',
-    pageTitle: '',
-    instructionPage: '', // Instruction url
-    bundleFile: '',
+    handlerUrl: "",
+    pageTitle: "",
+    instructionPage: "", // Instruction url
+    bundleFile: "",
     categories: [],
     attributes: [],
-    taskId: '',
+    taskId: "",
     demoMode: false,
     autosave: false,
     bots: false,
@@ -453,19 +511,28 @@ export function makeTaskConfig (params: Partial<ConfigType> = {}): ConfigType {
 
 /**
  * Make pane node
+ *
  * @param viewerId
  * @param size
+ * @param paneId
+ * @param parent
+ * @param primarySize
  * @param split
  * @param minSize
  * @param maxSize
+ * @param primary
+ * @param minPrimarySize
+ * @param maxPrimarySize
+ * @param child1
+ * @param child2
  */
-export function makePane (
+export function makePane(
   viewerId: number = -1,
   paneId: number = -1,
   parent: number = -1,
   primarySize?: number,
   split?: SplitType,
-  primary?: 'first' | 'second',
+  primary?: "first" | "second",
   minPrimarySize?: number,
   maxPrimarySize?: number,
   child1?: number,
@@ -490,26 +557,28 @@ export function makePane (
 
 /**
  * Initialize a Layout state
+ *
  * @param {{}} params
- * @return {LayoutType}
+ * @returns {LayoutType}
  */
-export function makeLayout (params: {} = {}): LayoutType {
+export function makeLayout(params: {} = {}): LayoutType {
   return {
     toolbarWidth: 200,
     maxViewerConfigId: 0,
     maxPaneId: 0,
     rootPane: 0,
-    panes: { [0]: makePane(0, 0) },
+    panes: { 0: makePane(0, 0) },
     ...params
   }
 }
 
 /**
  * Initialize a user selection sate
+ *
  * @param {{}} params
- * @return {Selection}
+ * @returns {Selection}
  */
-function makeSelect (params: Partial<Select>= {}): Select {
+function makeSelect(params: Partial<Select> = {}): Select {
   return {
     item: 0,
     labels: [],
@@ -524,10 +593,11 @@ function makeSelect (params: Partial<Select>= {}): Select {
 
 /**
  * Initialize a user sate
+ *
  * @param {{}} params
- * @return {UserType}
+ * @returns {UserType}
  */
-function makeUser (params: Partial<UserType>= {}): UserType {
+function makeUser(params: Partial<UserType> = {}): UserType {
   return {
     id: INVALID_ID,
     select: makeSelect(),
@@ -540,10 +610,11 @@ function makeUser (params: Partial<UserType>= {}): UserType {
 
 /**
  * Initialize a item status sate
+ *
  * @param {{}} params
- * @return {ItemStatus}
+ * @returns {ItemStatus}
  */
-export function makeItemStatus (params: Partial<ItemStatus>= {}): ItemStatus {
+export function makeItemStatus(params: Partial<ItemStatus> = {}): ItemStatus {
   return {
     sensorDataLoaded: {},
     ...params
@@ -552,10 +623,11 @@ export function makeItemStatus (params: Partial<ItemStatus>= {}): ItemStatus {
 
 /**
  * Initialize a session state
+ *
  * @param {{}} params
- * @return {Session}
+ * @returns {Session}
  */
-function makeSession (params: Partial<SessionType>= {}): SessionType {
+function makeSession(params: Partial<SessionType> = {}): SessionType {
   return {
     id: INVALID_ID,
     startTime: 0,
@@ -569,10 +641,11 @@ function makeSession (params: Partial<SessionType>= {}): SessionType {
 
 /**
  * Initialize a task status state
+ *
  * @param {{}} params
- * @return {TaskStatus}
+ * @returns {TaskStatus}
  */
-function makeTaskStatus (params: Partial<TaskStatus> = {}): TaskStatus {
+function makeTaskStatus(params: Partial<TaskStatus> = {}): TaskStatus {
   return {
     maxOrder: -1,
     ...params
@@ -581,10 +654,11 @@ function makeTaskStatus (params: Partial<TaskStatus> = {}): TaskStatus {
 
 /**
  * Initialize a task sate
+ *
  * @param {{}} params
- * @return {TaskType}
+ * @returns {TaskType}
  */
-export function makeTask (params: Partial<TaskType> = {}): TaskType {
+export function makeTask(params: Partial<TaskType> = {}): TaskType {
   const task: TaskType = {
     config: makeTaskConfig(),
     status: makeTaskStatus(),
@@ -601,10 +675,11 @@ export function makeTask (params: Partial<TaskType> = {}): TaskType {
 
 /**
  * Initialize a Sat state
+ *
  * @param {{}} params
- * @return {State}
+ * @returns {State}
  */
-export function makeState (params: Partial<State> = {}): State {
+export function makeState(params: Partial<State> = {}): State {
   return {
     task: makeTask(params.task),
     user: makeUser(params.user),
@@ -614,50 +689,53 @@ export function makeState (params: Partial<State> = {}): State {
 
 /**
  * Check whether the input ID is valid or not default
+ *
  * @param {IdType} id
  */
-export function isValidId (id: IdType): bool {
-  return id !== INVALID_ID && id !== '-1'
+export function isValidId(id: IdType): bool {
+  return id !== INVALID_ID && id !== "-1"
 }
 
 /**
  * Generate new label id. It should not be called outside this file.
  */
-function genLabelId (): IdType {
+function genLabelId(): IdType {
   return uid()
 }
 
 /**
  * Generate new track id. It should not be called outside this file.
  */
-function genTrackId (): IdType {
+function genTrackId(): IdType {
   return uid()
 }
 
 /**
  * Generate new shape id. It should not be called outside this file.
  */
-function genShapeId (): IdType {
+function genShapeId(): IdType {
   return uid()
 }
 
 /**
  * Generate new item id. It should not be called outside this file.
  */
-function genItemId (): IdType {
+function genItemId(): IdType {
   return uid()
 }
 
 /**
  * Generate an integer representation with low collision for different ids
  * This is currently a sum of the char codes
+ *
  * @param {IdType} id
+ * @param s
  */
-export function id2int (s: IdType): number {
+export function id2int(s: IdType): number {
   let h = 0
   for (let i = 0; i < s.length; i++) {
-    // tslint:disable-next-line: no-bitwise
-    h = h + s.charCodeAt(i) | 0
+    // eslint-disable-next-line no-bitwise
+    h = (h + s.charCodeAt(i)) | 0
     // H = Math.imul(31, h) + s.charCodeAt(i) | 0
   }
   return h

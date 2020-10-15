@@ -19,7 +19,8 @@
     },
     "include": [
         "app/src",
-        "app/src/bot/proto_gen"
+        "app/src/bot/proto_gen",
+        "app/test"
     ],
     "typeRoots": [
         "./node_modules/@types"

@@ -1,13 +1,26 @@
-// tslint:disable:no-any
-// TODO: remove the disable tag
-import CssBaseline from '@material-ui/core/CssBaseline'
-import { withStyles } from '@material-ui/core/styles'
-import * as React from 'react'
-import SplitPane from 'react-split-pane'
-import Session from '../common/session'
-import { LayoutStyles } from '../styles/label'
-import LabelPane from './label_pane'
-import PlayerControl from './player_control'
+import CssBaseline from "@material-ui/core/CssBaseline"
+import { withStyles } from "@material-ui/core/styles"
+import * as React from "react"
+import SplitPane from "react-split-pane"
+import Session from "../common/session"
+import { LayoutStyles } from "../styles/label"
+import LabelPane from "./label_pane"
+import PlayerControl from "./player_control"
+
+/**
+ * Check whether a react node is empty
+ *
+ * @param node
+ */
+function isNodeEmpty(node: React.ReactNode): boolean {
+  return (
+    node === null ||
+    node === undefined ||
+    node === "" ||
+    node === false ||
+    node === {}
+  )
+}
 
 interface ClassType {
   /** title bar */
@@ -22,17 +35,17 @@ interface ClassType {
 
 interface Props {
   /** The title bar */
-  titleBar: any
+  titleBar: React.ReactNode
   /** The top part of the left side bar */
-  leftSidebar1: any
+  leftSidebar1: React.ReactNode
   /** The bottom part of the left side bar */
-  leftSidebar2?: any
+  leftSidebar2: React.ReactNode
   /** The bottom bar */
-  bottomBar?: any
+  bottomBar: React.ReactNode
   /** The top part of the right side bar */
-  rightSidebar1?: any
+  rightSidebar1: React.ReactNode
   /** The bottom part of the right side bar */
-  rightSidebar2?: any
+  rightSidebar2: React.ReactNode
   /** class type */
   classes: ClassType
 }
@@ -55,7 +68,8 @@ interface LayoutState {
   right_size: number
 }
 
-(window as any).__MUI_USE_NEXT_TYPOGRAPHY_VARIANTS__ = true
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+;(window as any).__MUI_USE_NEXT_TYPOGRAPHY_VARIANTS__ = true
 
 /**
  * Layout of the labeling interface
@@ -65,9 +79,11 @@ class LabelLayout extends React.Component<Props, State> {
   public layoutState: LayoutState
 
   /**
-   * @param {object} props
+   * Constructor
+   *
+   * @param props
    */
-  constructor (props: any) {
+  constructor(props: Props) {
     super(props)
     this.layoutState = { left_size: 0, center_size: 0, right_size: 0 }
     Session.subscribe(this.onStateUpdated.bind(this))
@@ -76,22 +92,23 @@ class LabelLayout extends React.Component<Props, State> {
   /**
    * called on redux store update
    */
-  public onStateUpdated () {
+  public onStateUpdated(): void {
     this.setState(this.layoutState)
   }
 
   /**
    * Handler on change
+   *
    * @param {number} size
    * @param {string} position
    */
-  public handleOnChange (size: number, position: string) {
+  public handleOnChange(size: number, position: string): void {
     const layoutState = this.layoutState
-    if (position === 'left' && this.layoutState.left_size !== size) {
+    if (position === "left" && this.layoutState.left_size !== size) {
       layoutState.left_size = size
-    } else if (position === 'center' && this.layoutState.center_size !== size) {
+    } else if (position === "center" && this.layoutState.center_size !== size) {
       layoutState.center_size = size
-    } else if (position === 'right' && this.layoutState.right_size !== size) {
+    } else if (position === "right" && this.layoutState.right_size !== size) {
       layoutState.right_size = size
     }
     this.setState(layoutState)
@@ -99,6 +116,7 @@ class LabelLayout extends React.Component<Props, State> {
 
   /**
    * Split component with the second component optional
+   *
    * @param {string} split - horizontal or vertical
    * @param {React.Fragment} comp1 - the first component
    * @param {React.Fragment} comp2 - the second component
@@ -113,42 +131,47 @@ class LabelLayout extends React.Component<Props, State> {
    * which size to update in layoutState
    * @return {Component}
    */
-  public optionalSplit (split: 'vertical' | 'horizontal',
-                        comp1: React.ReactFragment | undefined,
-                        comp2: React.ReactFragment | undefined,
-                        name1: string, name2: string, min: number, dflt: number,
-                        max: number, primary: 'first' | 'second' = 'first',
-                        position: string = 'center') {
-    if (!comp1) {
+  public split(
+    split: "vertical" | "horizontal",
+    comp1: React.ReactNode,
+    comp2: React.ReactNode,
+    name1: string,
+    name2: string,
+    min: number,
+    dflt: number,
+    max: number,
+    primary: "first" | "second" = "first",
+    position: string = "center"
+  ): React.ReactNode {
+    if (isNodeEmpty(comp1)) {
       return
     }
-    return (
-        comp2 ?
-            <SplitPane split={split} minSize={min}
-                       defaultSize={dflt}
-                       maxSize={max} primary={primary}
-                       pane1Style={{ overflowY: 'scroll', overflowX: 'hidden' }}
-                       onChange={(size) => {
-                         this.handleOnChange(size, position)
-                       }}>
-              <div className={name1}>
-                {comp1}
-              </div>
-              <div className={name2}>
-                {comp2}
-              </div>
-            </SplitPane>
-            : <div className={name1}>
-              {comp1}
-            </div>
+    return !isNodeEmpty(comp2) ? (
+      <SplitPane
+        split={split}
+        minSize={min}
+        defaultSize={dflt}
+        maxSize={max}
+        primary={primary}
+        pane1Style={{ overflowY: "auto", overflowX: "auto" }}
+        onChange={(size) => {
+          this.handleOnChange(size, position)
+        }}
+      >
+        <div className={name1}>{comp1}</div>
+        <div className={name2}>{comp2}</div>
+      </SplitPane>
+    ) : (
+      <div className={name1}>{comp1}</div>
     )
   }
 
   /**
    * Render function
+   *
    * @return {React.Fragment} React fragment
    */
-  public render () {
+  public render(): React.ReactFragment {
     const {
       titleBar,
       leftSidebar1,
@@ -158,9 +181,9 @@ class LabelLayout extends React.Component<Props, State> {
       rightSidebar2,
       classes
     } = this.props
-    const leftDefaultWidth = 200
-    const leftMaxWidth = 300
-    const leftMinWidth = 180
+    const leftDefaultWidth = 160
+    const leftMaxWidth = 180
+    const leftMinWidth = 140
     const rightDefaultWidth = 200
     const rightMaxWidth = 300
     const rightMinWidth = 180
@@ -171,93 +194,94 @@ class LabelLayout extends React.Component<Props, State> {
     const bottomMaxHeight = 300
     const bottomMinHeight = 180
 
-    const playerControl = (<PlayerControl key='player-control'
-      num_frames={Session.getState().task.items.length}
-    />)
+    const playerControl = (
+      <PlayerControl
+        key="player-control"
+        numFrames={Session.getState().task.items.length}
+      />
+    )
 
     const state = Session.getState()
 
     const labelInterface = (
       <div className={this.props.classes.interfaceContainer}>
         <div className={this.props.classes.paneContainer}>
-          <LabelPane
-            pane={state.user.layout.rootPane} key={'rootPane'}
-          />
+          <LabelPane pane={state.user.layout.rootPane} key={"rootPane"} />
         </div>
-        { playerControl }
-      </div >
+        {playerControl}
+      </div>
     )
 
     return (
-        <React.Fragment>
-          <CssBaseline />
-          <div className={classes.titleBar}>
-            {titleBar}
-          </div>
-          <main className={classes.main}>
-            {
-              this.optionalSplit('vertical',
-                // Left sidebar
-                this.optionalSplit('horizontal',
-                  leftSidebar1,
-                  leftSidebar2,
-                  'leftSidebar1',
-                  'leftSidebar2',
-                  topMinHeight,
-                  topDefaultHeight,
-                  topMaxHeight,
-                  'first'
-                ),
+      <React.Fragment>
+        <CssBaseline />
+        <div className={classes.titleBar}>{titleBar}</div>
+        <main className={classes.main}>
+          {this.split(
+            "vertical",
+            // Left sidebar
+            this.split(
+              "horizontal",
+              leftSidebar1,
+              leftSidebar2,
+              "leftSidebar1",
+              "leftSidebar2",
+              topMinHeight,
+              topDefaultHeight,
+              topMaxHeight,
+              "first"
+            ),
 
-                this.optionalSplit('vertical',
-                  // Center
-                  this.optionalSplit('horizontal',
-                    labelInterface,
-                    bottomBar,
-                    'main',
-                    'bottomBar',
-                    bottomMinHeight,
-                    bottomDefaultHeight,
-                    bottomMaxHeight,
-                    'second',
-                    'center'
-                  ),
+            this.split(
+              "vertical",
+              // Center
+              this.split(
+                "horizontal",
+                labelInterface,
+                bottomBar,
+                "main",
+                "bottomBar",
+                bottomMinHeight,
+                bottomDefaultHeight,
+                bottomMaxHeight,
+                "second",
+                "center"
+              ),
 
-                  // Right sidebar
-                  this.optionalSplit('horizontal',
-                    rightSidebar1,
-                    rightSidebar2,
-                    'rightSidebar1',
-                    'rightSidebar2',
-                    topMinHeight,
-                    topDefaultHeight,
-                    topMaxHeight
-                  ),
+              // Right sidebar
+              this.split(
+                "horizontal",
+                rightSidebar1,
+                rightSidebar2,
+                "rightSidebar1",
+                "rightSidebar2",
+                topMinHeight,
+                topDefaultHeight,
+                topMaxHeight
+              ),
 
-                  'center',
-                  'rightSidebar',
-                  rightMinWidth,
-                  rightDefaultWidth,
-                  rightMaxWidth,
-                  'second',
-                  'right'
-                ),
+              "center",
+              "rightSidebar",
+              rightMinWidth,
+              rightDefaultWidth,
+              rightMaxWidth,
+              "second",
+              "right"
+            ),
 
-                'leftSidebar',
-                'centerAndRightSidebar',
-                leftMinWidth,
-                leftDefaultWidth,
-                leftMaxWidth,
-                'first',
-                'left'
-              )
-            }
-          </main>
-          {/* End footer */}
-        </React.Fragment>
+            "leftSidebar",
+            "centerAndRightSidebar",
+            leftMinWidth,
+            leftDefaultWidth,
+            leftMaxWidth,
+            "first",
+            "left"
+          )}
+        </main>
+        {/* End footer */}
+      </React.Fragment>
     )
   }
 }
 
-export default withStyles(
-  LayoutStyles, { withTheme: true })(LabelLayout)
+export default withStyles(LayoutStyles, { withTheme: true })(LabelLayout)
