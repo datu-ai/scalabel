@@ -89,16 +89,19 @@ export function makeProjectDir(dataDir: string, projectName: string): void {
  */
 export function getInitialState(sessionId: string): State {
   const partialTask: Partial<TaskType> = {
-    items: [makeItem(
-      {
-        index: 0,
-        id: '0',
-        urls: {
-          0: 'https://s3-us-west-2.amazonaws.com/scalabel-public/demo/frames/intersection-0000070.jpg'
-        }
-      },
-    true)],
-    sensors: { 0: makeSensor(0, '', '') }
+    items: [
+      makeItem(
+        {
+          index: 0,
+          id: "0",
+          urls: {
+            0: "https://s3-us-west-2.amazonaws.com/scalabel-public/demo/frames/intersection-0000070.jpg"
+          }
+        },
+        true
+      )
+    ],
+    sensors: { 0: makeSensor(0, "", "") }
   }
   const defaultTask = makeTask(partialTask)
   const defaultState = makeState({

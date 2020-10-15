@@ -1,14 +1,13 @@
-import { uid } from '../common/uid'
-import Logger from '../server/logger'
-import { getRedisBotKey, getRedisBotSet } from '../server/path'
-import { RedisClient } from '../server/redis_client'
-import { RedisPubSub } from '../server/redis_pub_sub'
-import { BotData } from '../types/bot'
-import { BotConfig } from '../types/config'
-import {
-  RegisterMessageType} from '../types/message'
-import { Bot } from './bot'
-import { DeploymentClient } from './deployment_client'
+import { uid } from "../common/uid"
+import Logger from "../server/logger"
+import { getRedisBotKey, getRedisBotSet } from "../server/path"
+import { RedisClient } from "../server/redis_client"
+import { RedisPubSub } from "../server/redis_pub_sub"
+import { BotData } from "../types/bot"
+import { BotConfig } from "../types/config"
+import { RegisterMessageType } from "../types/message"
+import { Bot } from "./bot"
+import { DeploymentClient } from "./deployment_client"
 
 /**
  * Watches redis and spawns virtual sessions as needed
@@ -34,15 +33,18 @@ export class BotManager {
    * @param deploymentClient
    * @param pollTime
    */
-  constructor (
-    config: BotConfig, subscriber: RedisPubSub,
-    redisClient: RedisClient, deploymentClient: DeploymentClient,
-    pollTime?: number) {
+  constructor(
+    config: BotConfig,
+    subscriber: RedisPubSub,
+    redisClient: RedisClient,
+    deploymentClient: DeploymentClient,
+    pollTime?: number
+  ) {
     this.config = config
     this.subscriber = subscriber
     this.redisClient = redisClient
     this.deploymentClient = deploymentClient
-    if (pollTime) {
+    if (pollTime !== undefined) {
       this.pollTime = pollTime
     } else {
       this.pollTime = 1000 * 60 * 5 // 5 minutes in ms
@@ -162,7 +164,8 @@ export class BotManager {
    */
   private makeBot(botData: BotData): Bot {
     Logger.info(
-      `Creating bot for project ${botData.projectName}, task ${botData.taskIndex}`)
+      `Creating bot for project ${botData.projectName}, task ${botData.taskIndex}`
+    )
     const bot = new Bot(this.deploymentClient, botData)
 
     // Only use this disable if we are certain all the errors are handled

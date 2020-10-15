@@ -1,23 +1,27 @@
-import * as grpc from 'grpc'
-import logger from '../server/logger'
-import { LabelExport } from '../types/bdd'
-import { ModelType, QueryType } from '../types/bot'
-import { BotConfig } from '../types/config'
-import * as common from './proto_gen/commons_pb.js'
-import * as services from './proto_gen/model_deployment_service_grpc_pb.js'
-import * as messages from './proto_gen/model_deployment_service_pb.js'
-import { boxListToProto } from './proto_utils'
+import * as grpc from "grpc"
+import logger from "../server/logger"
+import { LabelExport } from "../types/export"
+import { ModelType, QueryType } from "../types/bot"
+import { BotConfig } from "../types/config"
+import * as common from "./proto_gen/commons_pb.js"
+import * as services from "./proto_gen/model_deployment_service_grpc_pb.js"
+import * as messages from "./proto_gen/model_deployment_service_pb.js"
+import { boxListToProto } from "./proto_utils"
 
 /**
  * Create a new grpc stub connection
+ *
+ * @param config
  */
-export function makeStub (config: BotConfig):
-  services.DeploymentServiceClient | null {
+export function makeStub(
+  config: BotConfig
+): services.DeploymentServiceClient | null {
   const address = `${config.host}:${config.port}`
   logger.info(`Trying to connect to grpc server at ${address}`)
   try {
     const client = new services.DeploymentServiceClient(
-      address, grpc.credentials.createInsecure()
+      address,
+      grpc.credentials.createInsecure()
     )
     return client
   } catch (e) {
@@ -41,7 +45,12 @@ export class DeploymentClient {
   /** An arbitrary project ID reserved for Scalabel */
   protected projectId: string
 
-  constructor (stub: services.DeploymentServiceClient) {
+  /**
+   * Constructor
+   *
+   * @param stub
+   */
+  constructor(stub: services.DeploymentServiceClient) {
     this.stub = stub
     this.modelTypeToDeployID = new Map()
     this.modelTypeToProto = new Map([
@@ -54,13 +63,15 @@ export class DeploymentClient {
       [QueryType.REFINE_POLY, ModelType.INSTANCE_SEGMENTATION]
     ])
 
-    this.projectId = 'scalabelProjectId'
+    this.projectId = "scalabelProjectId"
   }
 
   /**
    * Completely set up and deploy the model
+   *
+   * @param modelType
    */
-  public async deployModel (modelType: ModelType) {
+  public async deployModel(modelType: ModelType): Promise<void> {
     if (this.modelTypeToDeployID.has(modelType)) {
       logger.info(`${modelType.toString()} model already deployed.`)
       return
@@ -89,91 +100,110 @@ export class DeploymentClient {
 
   /**
    * Run inference on a deployed model
+   *
    * @param queryType: the type of inference query
    * @param urlList: the list of image urls
    * @param labelLists: for each image, the list of labels
+   * @param queryType
+   * @param urlList
+   * @param labelLists
    */
-  public async infer (
-    queryType: QueryType, urlList: string[],
-    labelLists: LabelExport[][]):
-    Promise<messages.InferenceResponse> {
+  public async infer(
+    queryType: QueryType,
+    urlList: string[],
+    labelLists: LabelExport[][]
+  ): Promise<messages.InferenceResponse> {
     const modelType = this.queryTypeToModel.get(queryType)
     if (modelType === undefined) {
-      return Promise.reject(
+      return await Promise.reject(
         Error(`${queryType.toString()} query not supported.`)
       )
     }
 
     const deployId = this.modelTypeToDeployID.get(modelType)
     if (deployId === undefined) {
-      return Promise.reject(
-        Error(`${modelType.toString()} model not deployed.`))
+      return await Promise.reject(
+        Error(`${modelType.toString()} model not deployed.`)
+      )
     }
 
     const req = new messages.InferenceRequest()
     req.setProjectId(this.projectId)
     req.setDeploymentTaskId(deployId)
     req.setUrlListList(urlList)
-    const protoBoxList = labelLists.map((labelList) => boxListToProto(
-      labelList.map((label) => label.box2d)
-    ))
+    const protoBoxList = labelLists.map((labelList) =>
+      boxListToProto(labelList.map((label) => label.box2d))
+    )
     req.setBoxListsList(protoBoxList)
 
     return new Promise((resolve, reject) => {
-      this.stub.performInference(req, (
-        err: Error | null, result: messages.InferenceResponse) => {
-        if (err) {
-          return reject(err)
+      this.stub.performInference(
+        req,
+        (err: Error | null, result: messages.InferenceResponse) => {
+          if (err !== null) {
+            return reject(err)
+          }
+          resolve(result)
         }
-        resolve(result)
-      })
+      )
     })
-
   }
 
   /**
    * Initial set up to deploy a model
+   *
+   * @param modelType
    */
-  private async createDeploymentTask (modelType: ModelType):
-    Promise<messages.CreateDeploymentTaskResponse> {
+  private async createDeploymentTask(
+    modelType: ModelType
+  ): Promise<messages.CreateDeploymentTaskResponse> {
     const taskType = this.modelTypeToProto.get(modelType)
     if (taskType === undefined) {
-      return Promise.reject(Error(`No proto mapping supplied for ${modelType} model.`))
+      return await Promise.reject(
+        Error(`No proto mapping supplied for ${modelType} model.`)
+      )
     }
 
     const req = new messages.CreateDeploymentTaskRequest()
     req.setProjectId(this.projectId)
     req.setTaskType(taskType)
 
-    return new Promise((resolve, reject) => {
-      this.stub.createDeploymentTask(req,
+    return await new Promise((resolve, reject) => {
+      this.stub.createDeploymentTask(
+        req,
         (err: Error | null, result: messages.CreateDeploymentTaskResponse) => {
-          if (err) {
+          if (err !== null) {
             return reject(err)
           }
           resolve(result)
-        })
+        }
+      )
     })
   }
 
   /**
    * Finish the deployment
+   *
+   * @param deployId
    */
-  private async finishDeployment (deployId: string):
-    Promise<messages.DeployResponse> {
+  private async finishDeployment(
+    deployId: string
+  ): Promise<messages.DeployResponse> {
     const req = new messages.DeployRequest()
     req.setProjectId(this.projectId)
     req.setNumGpus(1)
     req.setDeploymentTaskId(deployId)
 
-    return new Promise((resolve, reject) => {
-      this.stub.deployModel(req,
+    return await new Promise((resolve, reject) => {
+      this.stub.deployModel(
+        req,
         (err: Error | null, result: messages.DeployResponse) => {
-          if (err) {
+          if (err !== null) {
             return reject(err)
           }
           resolve(result)
-        })
+        }
+      )
     })
   }
 }

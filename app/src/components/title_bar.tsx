@@ -8,10 +8,10 @@ import {
   Tooltip
 } from "@material-ui/core"
 import Fade from "@material-ui/core/Fade"
-import FormControlLabel from '@material-ui/core/FormControlLabel'
+import FormControlLabel from "@material-ui/core/FormControlLabel"
 import { Theme, withStyles } from "@material-ui/core/styles"
 import createStyles from "@material-ui/core/styles/createStyles"
-import Switch from '@material-ui/core/Switch'
+import Switch from "@material-ui/core/Switch"
 import Typography from "@material-ui/core/Typography"
 import _ from "lodash"
 import React from "react"
@@ -150,7 +150,7 @@ class TitleBar extends Component<Props> {
   /**
    * Handle bot switch toggle
    */
-  public handleBotSwitch () {
+  public handleBotSwitch(): void {
     this.props.toggleBot()
   }
 
@@ -159,10 +159,18 @@ class TitleBar extends Component<Props> {
    *
    * @return {React.Fragment} React fragment
    */
-  public render () {
-    const { classes, title, instructionLink,
-      dashboardLink, autosave, statusText, statusTextHide,
-      botEnabledGlobal, botEnabledUser} = this.props
+  public render(): JSX.Element {
+    const {
+      classes,
+      title,
+      instructionLink,
+      dashboardLink,
+      autosave,
+      statusText,
+      statusTextHide,
+      botEnabledGlobal,
+      botEnabledUser
+    } = this.props
 
     const keyboardLink = "https://doc.scalabel.ai/keyboard.html"
 
@@ -196,14 +204,14 @@ class TitleBar extends Component<Props> {
 
     const botSwitch = botEnabledGlobal ? (
       <FormControlLabel
-          control={
-            <Switch
-              checked={botEnabledUser}
-              onChange={this.handleBotSwitch.bind(this)}
-            />
-          }
-          label={'Bot'}
-        />
+        control={
+          <Switch
+            checked={botEnabledUser}
+            onChange={this.handleBotSwitch.bind(this)}
+          />
+        }
+        label={"Bot"}
+      />
     ) : null
 
     return (

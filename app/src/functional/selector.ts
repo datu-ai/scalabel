@@ -54,15 +54,19 @@ export const getDashboardLink = createSelector(
 
 /**
  * Get whether user has bot enabled
+ *
+ * @param state
  */
-export function isBotEnabled (state: ReduxState): boolean {
+export function isBotEnabled(state: ReduxState): boolean {
   return state.present.user.bot
 }
 
 /**
  * Get whether bot is enabled globally
+ *
+ * @param state
  */
-export function isBotOnGlobal (state: ReduxState): boolean {
+export function isBotOnGlobal(state: ReduxState): boolean {
   return state.present.task.config.bots
 }
 

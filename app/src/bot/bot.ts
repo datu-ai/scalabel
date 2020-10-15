@@ -1,22 +1,28 @@
-import io from 'socket.io-client'
-import { deleteLabels } from '../action/common'
-import { configureStore } from '../common/configure_store'
-import { uid } from '../common/uid'
-import { index2str } from '../common/util'
-import { EventName } from '../const/connection'
-import Logger from '../server/logger'
-import { getGRPCConnFailedMsg } from '../server/util'
-import { AddLabelsAction, BaseAction, DeleteLabelsAction } from '../types/action'
-import { BotData } from '../types/bot'
+import io from "socket.io-client"
+import { deleteLabels } from "../action/common"
+import { configureStore } from "../common/configure_store"
+import { uid } from "../common/uid"
+import { index2str } from "../common/util"
+import { EventName } from "../const/connection"
+import Logger from "../server/logger"
+import { getGRPCConnFailedMsg } from "../server/util"
 import {
-  ActionPacketType, RegisterMessageType, SyncActionMessageType
-} from '../types/message'
-import { ReduxStore } from '../types/redux'
-import { State } from '../types/state'
-import { getQuery, makePolyAction } from './action_converter'
-import { DeploymentClient } from './deployment_client'
-import { parseInstanceSegmentationResult } from './proto_utils'
-import { QueryPreparer } from './query_preparer'
+  AddLabelsAction,
+  BaseAction,
+  DeleteLabelsAction
+} from "../types/action"
+import { BotData } from "../types/bot"
+import {
+  ActionPacketType,
+  RegisterMessageType,
+  SyncActionMessageType
+} from "../types/message"
+import { ReduxStore } from "../types/redux"
+import { State } from "../types/state"
+import { getQuery, makePolyAction } from "./action_converter"
+import { DeploymentClient } from "./deployment_client"
+import { parseInstanceSegmentationResult } from "./proto_utils"
+import { QueryPreparer } from "./query_preparer"
 
 type BotAction = AddLabelsAction | DeleteLabelsAction
 
@@ -45,7 +51,7 @@ export class Bot {
   /** Number of actions received via broadcast */
   private actionCount: number
   /** The deployment client for the models */
-  private deploymentClient: DeploymentClient
+  private readonly deploymentClient: DeploymentClient
 
   /**
    * Constructor
@@ -53,8 +59,7 @@ export class Bot {
    * @param deploymentClient
    * @param botData
    */
-  constructor (
-    deploymentClient: DeploymentClient, botData: BotData) {
+  constructor(deploymentClient: DeploymentClient, botData: BotData) {
     this.deploymentClient = deploymentClient
     this.projectName = botData.projectName
     this.taskIndex = botData.taskIndex
@@ -117,13 +122,16 @@ export class Bot {
    *
    * @param message
    */
-  public async actionBroadcastHandler (
-    message: SyncActionMessageType): Promise<BotAction[]> {
+  public async actionBroadcastHandler(
+    message: SyncActionMessageType
+  ): Promise<BotAction[]> {
     const actionPacket = message.actions
     // If action was already acked, or if action came from a bot, ignore it
-    if (this.ackedPackets.has(actionPacket.id)
-      || !message.shouldTriggerBot
-      || message.sessionId === this.sessionId) {
+    if (
+      this.ackedPackets.has(actionPacket.id) ||
+      !message.shouldTriggerBot ||
+      message.sessionId === this.sessionId
+    ) {
       return []
     }
 
@@ -155,8 +163,7 @@ export class Bot {
    * @param actions
    * @param triggerId
    */
-  public broadcastActions (
-    actions: BotAction[], triggerId: string) {
+  public broadcastActions(actions: BotAction[], triggerId: string): void {
     const actionPacket: ActionPacketType = {
       actions,
       id: uid(),
@@ -217,10 +224,11 @@ export class Bot {
    * Batches the queries for each endpoint
    *
    * @param queries
+   * @param queryPreparer
    */
-  private async executeQueries (
-    queryPreparer: QueryPreparer):
-    Promise<BotAction[]> {
+  private async executeQueries(
+    queryPreparer: QueryPreparer
+  ): Promise<BotAction[]> {
     const actions: BotAction[] = []
     // TODO: currently waits for each endpoint sequentially, can parallelize
     for (const queryType of queryPreparer.getQueryTypes()) {
@@ -230,23 +238,28 @@ export class Bot {
           queryPreparer.getUrls(queryType),
           queryPreparer.getLabelLists(queryType)
         )
-        Logger.info(
-          `Got a ${resp.getMessage()} response from the model`)
-        resp.getInstanceSegmentationResultList().forEach(
-          (segmentationResult, index: number) => {
+        Logger.info(`Got a ${resp.getMessage()} response from the model`)
+        resp
+          .getInstanceSegmentationResultList()
+          .forEach((segmentationResult, index: number) => {
             parseInstanceSegmentationResult(segmentationResult).forEach(
               (polyPoints: number[][]) => {
-                actions.push(makePolyAction(
-                  polyPoints,
-                  queryPreparer.getItemIndices(queryType)[index],
-                  this.sessionId
-                ))
-              })
+                actions.push(
+                  makePolyAction(
+                    polyPoints,
+                    queryPreparer.getItemIndices(queryType)[index],
+                    this.sessionId
+                  )
+                )
+              }
+            )
           })
-        actions.push(deleteLabels(
-          queryPreparer.getItemIndices(queryType),
-          queryPreparer.getLabelIds(queryType)
-        ))
+        actions.push(
+          deleteLabels(
+            queryPreparer.getItemIndices(queryType),
+            queryPreparer.getLabelIds(queryType)
+          )
+        )
       } catch (e) {
         Logger.info(getGRPCConnFailedMsg(queryType.toString(), e.message))
       }
@@ -259,8 +272,7 @@ export class Bot {
    *
    * @param packet
    */
-  private packetToQueries (
-    packet: ActionPacketType): QueryPreparer {
+  private packetToQueries(packet: ActionPacketType): QueryPreparer {
     const queryPreparer = new QueryPreparer()
     for (const action of packet.actions) {
       if (action.sessionId !== this.sessionId) {

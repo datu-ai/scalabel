@@ -1,5 +1,5 @@
-import * as path from '../../src/server/path'
-import { BotData } from '../../src/types/bot'
+import * as path from "../../src/server/path"
+import { BotData } from "../../src/types/bot"
 
 test("Test redis keys", () => {
   const baseKey = "baseRedisKey"

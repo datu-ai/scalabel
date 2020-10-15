@@ -44,7 +44,13 @@ describe("Test sync middleware routes actions to synchronizer", () => {
 
     expect(registerSpy).toBeCalledTimes(1)
     expect(registerSpy).toBeCalledWith(
-      state, autosave, sessionId, bots, bots, expect.any(Function))
+      state,
+      autosave,
+      sessionId,
+      bots,
+      bots,
+      expect.any(Function)
+    )
   })
 
   test("Handles registration then reconnect", () => {
@@ -57,7 +63,13 @@ describe("Test sync middleware routes actions to synchronizer", () => {
 
     expect(registerSpy).toBeCalledTimes(1)
     expect(registerSpy).toBeCalledWith(
-      state, autosave, sessionId, bots, bots, expect.any(Function))
+      state,
+      autosave,
+      sessionId,
+      bots,
+      bots,
+      expect.any(Function)
+    )
 
     // After initial state is registered, sessionId is available
     expect(connectSpy).toBeCalledTimes(1)
@@ -118,7 +130,13 @@ describe("Test sync middleware routes actions to synchronizer", () => {
     // 2 actions: addBox, and session status update
     expect(logSpy).toBeCalledTimes(2)
     expect(logSpy).toBeCalledWith(
-      addBoxAction, autosave, sessionId, bots, bots,expect.any(Function))
+      addBoxAction,
+      autosave,
+      sessionId,
+      bots,
+      bots,
+      expect.any(Function)
+    )
   })
 })
 

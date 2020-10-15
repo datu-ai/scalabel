@@ -1,26 +1,31 @@
-import { addPolygon2dLabel } from '../action/polygon2d'
-import { ADD_LABELS } from '../const/action'
-import { ShapeTypeName } from '../const/common'
-import { makeLabelExport, makeSimplePathPoint2D } from '../functional/states'
-import { convertPolygonToExport } from '../server/export'
-import { AddLabelsAction, BaseAction, ItemIndexable } from '../types/action'
-import { LabelExport } from '../types/bdd'
-import { ModelQuery, QueryType } from '../types/bot'
-import { PathPoint2DType, PathPointType, RectType, State } from '../types/state'
+import { addPolygon2dLabel } from "../action/polygon2d"
+import { ADD_LABELS } from "../const/action"
+import { ShapeTypeName } from "../const/common"
+import { makeLabelExport, makeSimplePathPoint2D } from "../functional/states"
+import { convertPolygonToExport } from "../server/export"
+import { AddLabelsAction, BaseAction, ItemIndexable } from "../types/action"
+import { LabelExport } from "../types/export"
+import { ModelQuery, QueryType } from "../types/bot"
+import { PathPoint2DType, PathPointType, RectType, State } from "../types/state"
 
 /**
  * Type guard for actions that affect indices
+ *
+ * @param action
  */
-function isIndexableAction (action: BaseAction):
-  action is BaseAction & ItemIndexable {
+function isIndexableAction(
+  action: BaseAction
+): action is BaseAction & ItemIndexable {
   // tslint:disable-next-line: strict-type-predicates
-  return (action as unknown as ItemIndexable).itemIndices !== undefined
+  return ((action as unknown) as ItemIndexable).itemIndices !== undefined
 }
 
 /**
  * Type guard for add labels actions
+ *
+ * @param action
  */
-function isAddLabelAction (action: BaseAction): action is AddLabelsAction {
+function isAddLabelAction(action: BaseAction): action is AddLabelsAction {
   return action.type === ADD_LABELS
 }
 
@@ -28,22 +33,29 @@ function isAddLabelAction (action: BaseAction): action is AddLabelsAction {
  * Convert action to a query
  * Only handles box2d/polygon2d actions, so assume a single label/shape/item
  * If action is not handled, returns null
+ *
+ * @param state
+ * @param action
  */
-export function getQuery (state: State, action: BaseAction): ModelQuery | null {
+export function getQuery(state: State, action: BaseAction): ModelQuery | null {
   if (!isIndexableAction(action) || !isAddLabelAction(action)) {
     return null
   }
-  const url = Object.values(
-    state.task.items[action.itemIndices[0]].urls)[0]
+  const url = Object.values(state.task.items[action.itemIndices[0]].urls)[0]
   return actionToQuery(action, url)
 }
 
-  /**
-   * Generate BDD data format item corresponding to the action
-   * If action is not handled, returns null
-   */
-export function actionToQuery (
-  action: AddLabelsAction, url: string): ModelQuery | null {
+/**
+ * Generate BDD data format item corresponding to the action
+ * If action is not handled, returns null
+ *
+ * @param action
+ * @param url
+ */
+export function actionToQuery(
+  action: AddLabelsAction,
+  url: string
+): ModelQuery | null {
   const itemIndex = action.itemIndices[0]
   const shapes = action.shapes[0][0]
   const shapeType = shapes[0].shapeType
@@ -61,8 +73,7 @@ export function actionToQuery (
       break
     case ShapeTypeName.PATH_POINT_2D:
       labelExport = makeLabelExport({
-        poly2d: convertPolygonToExport(
-          shapes as PathPoint2DType[], label.type),
+        poly2d: convertPolygonToExport(shapes as PathPoint2DType[], label.type),
         id: label.id
       })
       queryType = QueryType.REFINE_POLY
@@ -81,18 +92,21 @@ export function actionToQuery (
 
 /**
  * Translate polygon response to an action
+ *
+ * @param polyPoints
+ * @param itemIndex
+ * @param sessionId
  */
-export function makePolyAction (
-  polyPoints: number[][], itemIndex: number,
-  sessionId: string): AddLabelsAction {
+export function makePolyAction(
+  polyPoints: number[][],
+  itemIndex: number,
+  sessionId: string
+): AddLabelsAction {
   const points = polyPoints.map((point: number[]) => {
-    return makeSimplePathPoint2D(
-        point[0], point[1], PathPointType.LINE)
+    return makeSimplePathPoint2D(point[0], point[1], PathPointType.LINE)
   })
 
-  const action = addPolygon2dLabel(
-    itemIndex, -1, [0], points, true, false
-  )
+  const action = addPolygon2dLabel(itemIndex, -1, [0], points, true, false)
   action.sessionId = sessionId
   return action
 }

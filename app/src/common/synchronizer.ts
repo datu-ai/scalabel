@@ -123,11 +123,15 @@ export class Synchronizer {
    * @param autosave
    * @param sessionId
    * @param bots
+   * @param shouldTriggerBot
    * @param dispatch
    */
-  public queueActionForSaving (
-    action: actionTypes.BaseAction, autosave: boolean,
-    sessionId: string, bots: boolean, shouldTriggerBot: boolean,
+  public queueActionForSaving(
+    action: actionTypes.BaseAction,
+    autosave: boolean,
+    sessionId: string,
+    bots: boolean,
+    shouldTriggerBot: boolean,
     dispatch: ThunkDispatchType
   ): void {
     const shouldBeSaved = (a: actionTypes.BaseAction): boolean => {
@@ -206,11 +210,17 @@ export class Synchronizer {
    * @param autosave
    * @param sessionId
    * @param bots
+   * @param shouldTriggerBot
    * @param dispatch
    */
-  public finishRegistration (
-    state: State, autosave: boolean, sessionId: string,
-    bots: boolean, shouldTriggerBot: boolean, dispatch: ThunkDispatchType) {
+  public finishRegistration(
+    state: State,
+    autosave: boolean,
+    sessionId: string,
+    bots: boolean,
+    shouldTriggerBot: boolean,
+    dispatch: ThunkDispatchType
+  ): void {
     if (!this.registeredOnce) {
       // One-time setup after first registration
       this.registeredOnce = true
@@ -337,19 +347,25 @@ export class Synchronizer {
    *
    * @param sessionId
    * @param bots
+   * @param shouldTriggerBot
    * @param dispatch
    */
-  public save (
-    sessionId: string, bots: boolean,
-    shouldTriggerBot: boolean, dispatch: ThunkDispatchType) {
+  public save(
+    sessionId: string,
+    bots: boolean,
+    shouldTriggerBot: boolean,
+    dispatch: ThunkDispatchType
+  ): void {
     if (this.socket.connected) {
       if (this.actionQueue.length > 0) {
         const packet: ActionPacketType = {
           actions: this.actionQueue,
           id: uid()
         }
-        this.actionsPendingSave =
-          this.actionsPendingSave.update(packet.id, packet)
+        this.actionsPendingSave = this.actionsPendingSave.update(
+          packet.id,
+          packet
+        )
         if (bots && shouldTriggerBot && doesPacketTriggerModel(packet)) {
           this.actionsPendingPrediction.add(packet.id)
         }
@@ -365,12 +381,15 @@ export class Synchronizer {
    *
    * @param actionPacket
    * @param sessionId
+   * @param shouldTriggerBot
    * @param dispatch
    */
   public sendActions(
     actionPacket: ActionPacketType,
-    sessionId: string, shouldTriggerBot: boolean,
-    dispatch: ThunkDispatchType) {
+    sessionId: string,
+    shouldTriggerBot: boolean,
+    dispatch: ThunkDispatchType
+  ): void {
     const message: SyncActionMessageType = {
       taskId: index2str(this.taskIndex),
       projectName: this.projectName,

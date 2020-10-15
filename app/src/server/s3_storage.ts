@@ -42,7 +42,8 @@ export class S3Storage extends Storage {
     this.bucketName = bucketPath[0]
 
     this.s3 = new AWS.S3({
-      httpOptions: { connectTimeout: 10000 }, maxRetries: 5
+      httpOptions: { connectTimeout: 10000 },
+      maxRetries: 5
     })
   }
 

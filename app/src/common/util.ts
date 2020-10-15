@@ -110,8 +110,10 @@ export function index2str(index: number): string {
  * @param actionPacket
  * @param bots
  */
-export function doesPacketTriggerModel (
-actionPacket: ActionPacketType): boolean {
-  return actionPacket.actions.map(
-      (action) => action.type === ADD_LABELS).includes(true)
+export function doesPacketTriggerModel(
+  actionPacket: ActionPacketType
+): boolean {
+  return actionPacket.actions
+    .map((action) => action.type === ADD_LABELS)
+    .includes(true)
 }

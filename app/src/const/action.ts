@@ -1,15 +1,15 @@
 import { BaseAction as actionConsts } from "../types/action"
 
-export const INIT_SESSION = 'INIT_SESSION'
-export const CHANGE_SELECT = 'CHANGE_SELECT'
-export const LOAD_ITEM = 'LOAD_ITEM'
-export const UPDATE_ALL = 'UPDATE_ALL'
-export const UPDATE_TASK = 'UPDATE_TASK'
-export const UPDATE_STATE = 'UPDATE_STATE'
-export const SUBMIT = 'SUBMIT'
-export const UPDATE_SESSION_STATUS = 'UPDATE_SESSION_STATUS'
-export const NULL = 'NULL'
-export const TOGGLE_BOT = 'TOGGLE_BOT'
+export const INIT_SESSION = "INIT_SESSION"
+export const CHANGE_SELECT = "CHANGE_SELECT"
+export const LOAD_ITEM = "LOAD_ITEM"
+export const UPDATE_ALL = "UPDATE_ALL"
+export const UPDATE_TASK = "UPDATE_TASK"
+export const UPDATE_STATE = "UPDATE_STATE"
+export const SUBMIT = "SUBMIT"
+export const UPDATE_SESSION_STATUS = "UPDATE_SESSION_STATUS"
+export const NULL = "NULL"
+export const TOGGLE_BOT = "TOGGLE_BOT"
 
 // Item Level
 export const ADD_LABELS = "ADD_LABELS"

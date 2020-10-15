@@ -9,10 +9,10 @@ import socketio from "socket.io"
 import { Endpoint } from "../const/connection"
 import { STORAGE_FOLDERS, StorageStructure } from "../const/storage"
 import { removeListItems } from "../functional/util"
-import { ModelType } from '../types/bot'
+import { ModelType } from "../types/bot"
 import { ServerConfig } from "../types/config"
 import { BotManager } from "../bot/bot_manager"
-import { DeploymentClient, makeStub } from '../bot/deployment_client'
+import { DeploymentClient, makeStub } from "../bot/deployment_client"
 import { readConfig } from "./config"
 import Callback from "./controller/callback"
 import { Hub } from "./hub"
@@ -140,14 +140,18 @@ async function makeBotManager(
 ): Promise<void> {
   if (config.bot.on) {
     const stub = makeStub(config.bot)
-    if (!stub) {
+    if (stub === null) {
       return
     }
     const deploymentClient = new DeploymentClient(stub)
     await deploymentClient.deployModel(ModelType.INSTANCE_SEGMENTATION)
 
     const botManager = new BotManager(
-      config.bot, subscriber, cacheClient, deploymentClient)
+      config.bot,
+      subscriber,
+      cacheClient,
+      deploymentClient
+    )
     await botManager.listen()
   }
 }

@@ -1465,20 +1465,19 @@ export function updateSessionStatus(
 
 /**
  * Update whether user has bot enabled
+ *
+ * @param state
+ * @param _action
  */
-export function toggleBot (
-  state: State, _action: actionTypes.ToggleBotAction
+export function toggleBot(
+  state: State,
+  _action: actionTypes.ToggleBotAction
 ): State {
-  const newUser = updateObject(
-    state.user,
-    {
-      bot: !state.user.bot
-    }
-  )
+  const newUser = updateObject(state.user, {
+    bot: !state.user.bot
+  })
 
-  return updateObject(
-    state, {
-      user: newUser
-    }
-  )
+  return updateObject(state, {
+    user: newUser
+  })
 }

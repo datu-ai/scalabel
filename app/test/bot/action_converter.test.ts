@@ -1,18 +1,18 @@
-import { addBox2dLabel } from '../../src/action/box2d'
-import { addPolygon2dLabel } from '../../src/action/polygon2d'
-import { actionToQuery, makePolyAction } from '../../src/bot/action_converter'
-import { LabelTypeName } from '../../src/const/common'
-import { makePathPoint2D, makeRect } from '../../src/functional/states'
-import { convertPolygonToExport } from '../../src/server/export'
-import { QueryType } from '../../src/types/bot'
-import { PathPoint2DType, PathPointType, RectType } from '../../src/types/state'
+import { addBox2dLabel } from "../../src/action/box2d"
+import { addPolygon2dLabel } from "../../src/action/polygon2d"
+import { actionToQuery, makePolyAction } from "../../src/bot/action_converter"
+import { LabelTypeName } from "../../src/const/common"
+import { makePathPoint2D, makeRect } from "../../src/functional/states"
+import { convertPolygonToExport } from "../../src/server/export"
+import { QueryType } from "../../src/types/bot"
+import { PathPoint2DType, PathPointType, RectType } from "../../src/types/state"
 
 let sessionId: string
 let url: string
 
 beforeAll(() => {
-  sessionId = 'sessionId'
-  url = 'testurl'
+  sessionId = "sessionId"
+  url = "testurl"
 })
 
 describe("test model interface query construction", () => {
@@ -27,7 +27,7 @@ describe("test model interface query construction", () => {
     const rectAction = addBox2dLabel(itemIndex, 0, [], {}, rect)
     const query = actionToQuery(rectAction, url)
     expect(query).not.toEqual(null)
-    if (!query) {
+    if (query === null) {
       return
     }
     expect(query.type).toBe(QueryType.PREDICT_POLY)
@@ -36,7 +36,7 @@ describe("test model interface query construction", () => {
 
     const box2d = query.label.box2d
     expect(box2d).not.toEqual(null)
-    if (!box2d) {
+    if (box2d === null) {
       return
     }
     expect(box2d.x1).toEqual(rect.x1)
@@ -54,7 +54,7 @@ describe("test model interface query construction", () => {
     const polyAction = addPolygon2dLabel(itemIndex, 0, [], points, true)
     const query = actionToQuery(polyAction, url)
     expect(query).not.toEqual(null)
-    if (!query) {
+    if (query === null) {
       return
     }
     expect(query.type).toBe(QueryType.REFINE_POLY)
@@ -62,7 +62,9 @@ describe("test model interface query construction", () => {
     expect(query.url).toBe(url)
 
     const expectedPoly = convertPolygonToExport(
-      points, LabelTypeName.POLYGON_2D)
+      points,
+      LabelTypeName.POLYGON_2D
+    )
     expect(query.label.poly2d).toEqual(expectedPoly)
   })
 })

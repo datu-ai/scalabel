@@ -1,4 +1,4 @@
-import { BaseAction } from './action'
+import { BaseAction } from "./action"
 
 export interface RegisterMessageType {
   /** Project name of the session */

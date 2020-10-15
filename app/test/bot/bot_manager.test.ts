@@ -1,14 +1,13 @@
-import _ from 'lodash'
-import { BotManager } from '../../src/bot/bot_manager'
-import { DeploymentClient, makeStub } from '../../src/bot/deployment_client'
-import { getRedisBotKey } from '../../src/server/path'
-import { RedisClient } from '../../src/server/redis_client'
-import { RedisPubSub } from '../../src/server/redis_pub_sub'
-import { BotData } from '../../src/types/bot'
-import { ServerConfig } from '../../src/types/config'
-import { RegisterMessageType } from '../../src/types/message'
-import { sleep } from '../project/util'
-import { getTestConfig } from '../server/util/util'
+import { BotManager } from "../../src/bot/bot_manager"
+import { DeploymentClient, makeStub } from "../../src/bot/deployment_client"
+import { getRedisBotKey } from "../../src/server/path"
+import { RedisClient } from "../../src/server/redis_client"
+import { RedisPubSub } from "../../src/server/redis_pub_sub"
+import { BotData } from "../../src/types/bot"
+import { ServerConfig } from "../../src/types/config"
+import { RegisterMessageType } from "../../src/types/message"
+import { sleep } from "../project/util"
+import { getTestConfig } from "../server/util/util"
 
 let client: RedisClient
 let subClient: RedisClient
@@ -22,7 +21,7 @@ beforeAll(async () => {
   subClient = new RedisClient(config.redis)
   subscriber = new RedisPubSub(subClient)
   const stub = makeStub(config.bot)
-  if (!stub) {
+  if (stub === null) {
     return
   }
   deploymentClient = new DeploymentClient(stub)
@@ -33,10 +32,14 @@ afterAll(async () => {
   await subClient.close()
 })
 
-describe('Test bot user manager', () => {
-  test('Test registration', async () => {
+describe("Test bot user manager", () => {
+  test("Test registration", async () => {
     const botManager = new BotManager(
-      config.bot, subscriber, client, deploymentClient)
+      config.bot,
+      subscriber,
+      client,
+      deploymentClient
+    )
 
     // Test that different tasks create different bots
     const goodRegisterMessages: RegisterMessageType[] = [
@@ -94,9 +97,14 @@ describe('Test bot user manager', () => {
   test("Test deregistration after no activity", async () => {
     const msTimeout = 300
     const botManager = new BotManager(
-      config.bot, subscriber, client, deploymentClient, msTimeout)
-    const registerData = makeRegisterData('project2', 0, 'user2', false)
-    const botData = makeBotData(registerData, 'botId')
+      config.bot,
+      subscriber,
+      client,
+      deploymentClient,
+      msTimeout
+    )
+    const registerData = makeRegisterData("project2", 0, "user2", false)
+    const botData = makeBotData(registerData, "botId")
 
     // Make sure redis is empty initially
     expect(await botManager.checkBotExists(botData)).toBe(false)

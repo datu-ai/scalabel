@@ -1,14 +1,17 @@
-import { Box2DType } from '../types/bdd'
-import * as messages from './proto_gen/model_deployment_service_pb.js'
+import { Box2DType } from "../types/export"
+import * as messages from "./proto_gen/model_deployment_service_pb.js"
 
 /**
  * Convert a box list from BDD format to proto format
+ *
+ * @param boxList
  */
-export function boxListToProto (
-  boxList: Array<Box2DType | null>): messages.BoxList {
+export function boxListToProto(
+  boxList: Array<Box2DType | null>
+): messages.BoxList {
   const protoBoxList = new messages.BoxList()
   boxList.forEach((box) => {
-    if (!box) {
+    if (box === null) {
       return
     }
     const protoBox = new messages.Box()
@@ -29,9 +32,12 @@ export function boxListToProto (
 /**
  * Parse the instance segmentation result into a list of polygons
  * Each polygon is a list of points
+ *
+ * @param resp
  */
-export function parseInstanceSegmentationResult (
-  resp: messages.InstanceSegmentationResult): number[][][] {
+export function parseInstanceSegmentationResult(
+  resp: messages.InstanceSegmentationResult
+): number[][][] {
   const polygons: number[][][] = []
   resp.getPolygonsList().forEach((polyProto) => {
     const polygon: number[][] = []

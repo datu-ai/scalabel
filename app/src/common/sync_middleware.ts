@@ -30,7 +30,8 @@ function handleSyncAction(
         initialState.session.id,
         initialState.task.config.bots,
         initialState.user.bot,
-        dispatch)
+        dispatch
+      )
       break
     }
     case actionConsts.CONNECT:
@@ -49,7 +50,8 @@ function handleSyncAction(
         state.session.id,
         state.task.config.bots,
         state.user.bot,
-        dispatch)
+        dispatch
+      )
       break
   }
 }
@@ -73,7 +75,13 @@ function handleNormalAction(
   const bots = state.task.config.bots
   const shouldTriggerBot = state.user.bot
   synchronizer.queueActionForSaving(
-    action, autosave, sessionId, bots, shouldTriggerBot, dispatch)
+    action,
+    autosave,
+    sessionId,
+    bots,
+    shouldTriggerBot,
+    dispatch
+  )
 }
 
 export const makeSyncMiddleware = (

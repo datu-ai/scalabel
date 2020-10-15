@@ -130,7 +130,13 @@ describe("Test synchronizer functionality", () => {
     sync.sendConnectionMessage(sessionId, dispatch)
     checkConnectMessage(sessionId)
     sync.finishRegistration(
-      newInitialState, autosave, sessionId, false, false, dispatch)
+      newInitialState,
+      autosave,
+      sessionId,
+      false,
+      false,
+      dispatch
+    )
 
     /**
      * Check that frontend state updates correctly
@@ -252,7 +258,8 @@ function startSynchronizer(setInitialState: boolean = true): Synchronizer {
       initialState.session.id,
       initialState.task.config.bots,
       initialState.user.bot,
-      dispatch)
+      dispatch
+    )
   }
 
   // Initially, no actions are queued for saving
