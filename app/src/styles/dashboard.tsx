@@ -1,8 +1,9 @@
-import { Theme } from '@material-ui/core'
-import { cyan } from '@material-ui/core/colors'
-import createStyles from '@material-ui/core/styles/createStyles'
+import { StyleRules, Theme } from "@material-ui/core"
+import createStyles from "@material-ui/core/styles/createStyles"
 /* Dashboard window styles */
-export const dashboardWindowStyles = (theme: Theme) =>
+export const dashboardWindowStyles = (
+  theme: Theme
+): StyleRules<"row" | "root" | "linkButton" | "headerCell" | "bodyCell", {}> =>
   createStyles({
     root: {
       paddingLeft: theme.spacing(2),
@@ -10,22 +11,26 @@ export const dashboardWindowStyles = (theme: Theme) =>
       paddingTop: theme.spacing(1)
     },
     row: {
-      background: theme.palette.common.white
+      background: theme.palette.action.hover
     },
     linkButton: {
-      color: cyan[500]
+      fontSize: "0.8rem",
+      color: theme.palette.secondary.main
     },
     headerCell: {
-      fontWeight: 'bold',
-      fontSize: '0.8rem',
-      color: theme.palette.common.black
+      fontWeight: "bold",
+      // fontSize: "0.8rem",
+      // color: theme.palette.primary.contrastText,
+      background: theme.palette.background.default
     },
-    bodyCell : {
+    bodyCell: {
       paddingTop: 0,
       paddingBottom: 0
+      // color: theme.palette.primary.contrastText,
+      // background: theme.palette.background.default
     }
   })
-export const headerStyle = (theme: Theme) =>
+export const headerStyle = (theme: Theme): StyleRules<"grow" | "chip", {}> =>
   createStyles({
     grow: {
       flexGrow: 1
@@ -35,82 +40,103 @@ export const headerStyle = (theme: Theme) =>
       marginLeft: theme.spacing(1)
     }
   })
-export const sidebarStyle = (theme: Theme) =>
+export const sidebarStyle = (
+  theme: Theme
+): StyleRules<
+  "root" | "listRoot" | "listItem" | "coloredListItem" | "link",
+  {}
+> =>
   createStyles({
+    root: {
+      background: theme.palette.background.default
+    },
     listRoot: {
       marginTop: theme.spacing(2),
-      width: '90%',
-      marginLeft: '5%'
+      width: "90%",
+      marginLeft: "5%"
     },
     listItem: {
-      textAlign: 'center',
+      textAlign: "center",
       margin: 0,
       paddingTop: 2,
       paddingBottom: 2
     },
     coloredListItem: {
-      backgroundColor: theme.palette.secondary.light
+      backgroundColor: theme.palette.action.hover
     },
     link: {
-      textAlign: 'center',
-      marginTop: theme.spacing(2)
+      textAlign: "center",
+      marginTop: theme.spacing(2),
+      width: "90%",
+      marginLeft: "5%"
     }
   })
-export const listEntryStyle = () =>
+export const listEntryStyle = (): StyleRules<
+  "listTag" | "listEntry" | "listContainer",
+  {}
+> =>
   createStyles({
     listTag: {
-      textAlign: 'right',
-      fontWeight: 'bold'
+      textAlign: "right",
+      fontWeight: "bold"
     },
     listEntry: {
-      textAlign: 'left'
+      textAlign: "left"
     },
     listContainer: {
       margin: 0
     }
   })
-/* styles for worker and admin dashboard*/
-export const dashboardStyles = (theme: Theme) => createStyles({
-  adminRoot: {
-    paddingLeft: theme.spacing(3),
-    paddingRight: theme.spacing(3)
-  },
-  workerRoot: {
-    flexGrow: 1,
-    paddingLeft: theme.spacing(3),
-    paddingRight: theme.spacing(3)
-  },
-  labelText: {
-    marginTop: theme.spacing(2)
-  },
-  appBarSpacer: theme.mixins.toolbar
-})
-/* dashboard header style */
+/* Styles for worker and admin dashboard */
+export const dashboardStyles = (
+  theme: Theme
+): StyleRules<"adminRoot" | "workerRoot" | "labelText" | "appBarSpacer", {}> =>
+  createStyles({
+    adminRoot: {
+      paddingLeft: theme.spacing(3),
+      paddingRight: theme.spacing(3)
+    },
+    workerRoot: {
+      flexGrow: 1,
+      paddingLeft: theme.spacing(3),
+      paddingRight: theme.spacing(3)
+    },
+    labelText: {
+      marginTop: theme.spacing(2)
+    },
+    appBarSpacer: theme.mixins.toolbar
+  })
+/* Dashboard header style */
 export const dashboardHeaderStyles = createStyles({
   title: {
     flexGrow: 1
   }
 })
-/* tableStyles */
-export const tableStyles = (theme: Theme) => createStyles({
-  root: {
-  },
-  headerCell: {
-    fontWeight: 'bold',
-    fontSize: '0.8rem',
-    color: theme.palette.common.black
-  },
-  row: {
-    background: theme.palette.common.white
-  }
-})
-/* tableCellStyles */
-export const tableCellStyles = (theme: Theme) => createStyles({
-  head: {
-    backgroundColor: theme.palette.primary.dark,
-    color: theme.palette.common.white
-  },
-  body: {
-    fontSize: 16
-  }
-})
+
+/* Table styles for the user dashboard */
+export const tableStyles = (
+  theme: Theme
+): StyleRules<"row" | "root" | "headerCell", {}> =>
+  createStyles({
+    root: {},
+    headerCell: {
+      fontWeight: "bold",
+      // fontSize: "0.8rem",
+      color: theme.palette.primary.light
+    },
+    row: {
+      background: theme.palette.action.hover
+    }
+  })
+/* TableCellStyles */
+export const tableCellStyles = (
+  theme: Theme
+): StyleRules<"head" | "body", {}> =>
+  createStyles({
+    head: {
+      backgroundColor: theme.palette.background.default
+    },
+    body: {
+      // fontSize: 16
+    }
+  })

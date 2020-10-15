@@ -34,11 +34,11 @@ let deploymentClient: DeploymentClient
 
 beforeAll(async () => {
   io.connect = jest.fn().mockImplementation(() => mockSocket)
-  projectName = 'testProject'
+  projectName = "testProject"
   botData = {
     taskIndex: 0,
     projectName,
-    botId: 'fakeBotId',
+    botId: "fakeBotId",
     address: location.origin
   }
   webId = 'fakeUserId'
@@ -67,8 +67,8 @@ describe('Test simple bot functionality', () => {
   })
 })
 
-describe('Test bot send-ack loop', () => {
-  test('Test single packet prediction', async () => {
+describe("Test bot send-ack loop", () => {
+  test("Test single packet prediction", async () => {
     const bot = setUpBot()
     const numActions = 5
     const message = makeSyncMessage(numActions, webId)
@@ -89,7 +89,7 @@ describe('Test bot send-ack loop', () => {
     expect(args[1].actions.triggerId).toBe(message.actions.id)
   })
 
-  test('Test duplicate actions are ignored', async () => {
+  test("Test duplicate actions are ignored", async () => {
     const bot = setUpBot()
     const numActions = 5
     const message = makeSyncMessage(numActions, webId)
@@ -110,7 +110,7 @@ describe('Test bot send-ack loop', () => {
     expect(botActions.length).toBe(0)
   })
 
-  test('Test bot actions are ignored', async () => {
+  test("Test bot actions are ignored", async () => {
     const bot = setUpBot()
     const numActions = 5
     const botMessage = makeSyncMessage(numActions, bot.sessionId)
@@ -124,7 +124,7 @@ describe('Test bot send-ack loop', () => {
     expect(botActions.length).toBe(0)
   })
 
-  test('Test bot store updates correctly', async () => {
+  test("Test bot store updates correctly", async () => {
     const bot = setUpBot()
     const expectedStore = configureStore(initialState)
 
@@ -175,6 +175,10 @@ function setUpBot () {
 /**
  * Helper function to update the expected store with
  * the incoming actions and the outgoing predictions
+ *
+ * @param store
+ * @param message
+ * @param botActions
  */
 function updateExpectedStore (
   store: ReduxStore, message: SyncActionMessageType,
@@ -190,8 +194,10 @@ function updateExpectedStore (
 }
 /**
  * Helper function for checking that correct connection message was sent
+ *
+ * @param sessId
  */
-function checkConnectMessage (sessId: string) {
+function checkConnectMessage(sessId: string): void {
   const expectedMessage: RegisterMessageType = {
     projectName: botData.projectName,
     taskIndex: botData.taskIndex,
@@ -205,9 +211,14 @@ function checkConnectMessage (sessId: string) {
 
 /**
  * Create a sync message with the specified number of actions
+ *
+ * @param numActions
+ * @param userId
  */
-function makeSyncMessage (
-  numActions: number, userId: string): SyncActionMessageType {
+function makeSyncMessage(
+  numActions: number,
+  userId: string
+): SyncActionMessageType {
   const actions: AddLabelsAction[] = []
   for (let _ = 0; _ < numActions; _++) {
     actions.push(getRandomBox2dAction())
@@ -221,9 +232,14 @@ function makeSyncMessage (
 
 /**
  * Convert action packet to sync message
+ *
+ * @param packet
+ * @param sessionId
  */
-function packetToMessage (
-  packet: ActionPacketType, sessionId: string): SyncActionMessageType {
+function packetToMessage(
+  packet: ActionPacketType,
+  sessionId: string
+): SyncActionMessageType {
   return {
     actions: packet,
     projectName: botData.projectName,

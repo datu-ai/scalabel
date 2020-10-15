@@ -1,20 +1,34 @@
-import * as fa from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Grid, IconButton, Link, List,
-  Table, TableCell, TableHead, TableRow } from '@material-ui/core'
-import Chip from '@material-ui/core/Chip'
-import ListItemText from '@material-ui/core/ListItemText'
-import withStyles from '@material-ui/core/styles/withStyles'
-import TableBody from '@material-ui/core/TableBody'
-import Typography from '@material-ui/core/Typography'
-import React from 'react'
-import { QueryArg } from '../const/common'
-import { Endpoint } from '../const/connection'
-import { dashboardWindowStyles, headerStyle,
-  listEntryStyle, sidebarStyle } from '../styles/dashboard'
-import { SubmitData } from '../types/state'
-import DividedPage from './divided_page'
-import { formatDate, getSubmissionTime } from './util'
+import * as fa from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import {
+  Button,
+  Grid,
+  IconButton,
+  List,
+  Table,
+  TableCell,
+  TableHead,
+  TableRow
+} from "@material-ui/core"
+import Chip from "@material-ui/core/Chip"
+import ListItemText from "@material-ui/core/ListItemText"
+import TableBody from "@material-ui/core/TableBody"
+import Typography from "@material-ui/core/Typography"
+import CloudDownloadIcon from "@material-ui/icons/CloudDownload"
+import { withStyles } from "@material-ui/styles"
+import React from "react"
+
+import { QueryArg } from "../const/common"
+import { Endpoint } from "../const/connection"
+import {
+  dashboardWindowStyles,
+  headerStyle,
+  listEntryStyle,
+  sidebarStyle
+} from "../styles/dashboard"
+import { SubmitData } from "../types/state"
+import DividedPage from "./divided_page"
+import { formatDate, getSubmissionTime } from "./util"
 
 export interface ProjectOptions {
   /** project name */
@@ -105,6 +119,7 @@ interface SidebarProps {
 }
 
 interface SidebarClassType {
+  root: string
   /** list root */
   listRoot: string
   /** list item */
@@ -135,10 +150,11 @@ interface ListEntryClassType {
 
 /**
  * creates the dashboard component
+ *
  * @param props
  * @constructor
  */
-function Dashboard (props: DashboardProps) {
+function Dashboard(props: DashboardProps): JSX.Element {
   const { classes, vendor } = props
   let totalTaskLabeled = 0
   let totalLabels = 0
@@ -148,28 +164,33 @@ function Dashboard (props: DashboardProps) {
   const sidebarContent = (
     <StyledSidebar projectMetaData={projectMetaData} vendor={vendor} />
   )
-  const align = 'center'
+  const align = "center"
   const mainContent = (
     <div className={classes.root}>
-      <Table size='small'>
+      <Table size="small" stickyHeader={true}>
         <TableHead>
           <TableRow>
             <TableCell align={align} className={classes.headerCell}>
-              {'Task Index'}</TableCell>
+              {"Task Index"}
+            </TableCell>
             <TableCell align={align} className={classes.headerCell}>
-              {'# Labeled Images'}</TableCell>
+              {"# Labeled Images"}
+            </TableCell>
             <TableCell align={align} className={classes.headerCell}>
-              {'# Labels'}</TableCell>
+              {"# Labels"}
+            </TableCell>
             <TableCell align={align} className={classes.headerCell}>
-              {'Submitted'}</TableCell>
+              {"Submitted"}
+            </TableCell>
             <TableCell align={align} className={classes.headerCell}>
-              {'Task Link'}</TableCell>
+              {"Task Link"}
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {taskMetaDatas.map((value: TaskOptions, index) => {
             const time = getSubmissionTime(value.submissions)
-            let dateString = ''
+            let dateString = ""
             if (time !== -1) {
               dateString = formatDate(time)
             }
@@ -178,7 +199,7 @@ function Dashboard (props: DashboardProps) {
             return (
               <TableRow
                 key={index}
-                className={index % 2 === 0 ? classes.row : ''}
+                className={index % 2 === 0 ? classes.row : ""}
               >
                 <TableCell className={classes.bodyCell} align={align}>
                   {index}
@@ -186,36 +207,40 @@ function Dashboard (props: DashboardProps) {
                 <TableCell
                   className={classes.bodyCell}
                   align={align}
-                  data-testid={'num-labeled-images-' + index.toString()}
+                  data-testid={"num-labeled-images-" + index.toString()}
                 >
                   {value.numLabeledItems}
                 </TableCell>
                 <TableCell
                   className={classes.bodyCell}
                   align={align}
-                  data-testid={'num-labels-' + index.toString()}
+                  data-testid={"num-labels-" + index.toString()}
                 >
                   {value.numLabels}
                 </TableCell>
                 <TableCell
                   className={classes.bodyCell}
                   align={align}
-                  data-testid={'submitted-' + index.toString()}
+                  data-testid={"submitted-" + index.toString()}
                 >
                   {dateString}
                 </TableCell>
                 <TableCell className={classes.bodyCell} align={align}>
                   <IconButton
                     className={classes.linkButton}
-                    color='inherit'
+                    color="inherit"
                     href={
                       `./${value.handlerUrl}` +
                       `?${QueryArg.PROJECT_NAME}=${projectMetaData.name}` +
                       `&${QueryArg.TASK_INDEX}=${index}`
                     }
-                    data-testid={'task-link-' + index.toString()}
+                    data-testid={"task-link-" + index.toString()}
                   >
-                    <FontAwesomeIcon icon={fa.faExternalLinkAlt} size={'sm'} />
+                    <FontAwesomeIcon
+                      icon={fa.faExternalLinkAlt}
+                      size="1x"
+                      transform="grow-6"
+                    />
                   </IconButton>
                 </TableCell>
               </TableRow>
@@ -226,133 +251,154 @@ function Dashboard (props: DashboardProps) {
     </div>
   )
   const headerContent = (
-    <StyledHeader totalLabels={totalLabels}
+    <StyledHeader
+      totalLabels={totalLabels}
       totalTaskLabeled={totalTaskLabeled}
       numUsers={numUsers}
-      vendor={vendor} />
+      vendor={vendor}
+    />
   )
   /**
    * renders the dashboard
+   *
    * @return component
    */
   return (
-    <DividedPage children={{
-      headerContent,
-      sidebarContent,
-      mainContent
-    }} />
+    <DividedPage
+      header={headerContent}
+      sidebar={sidebarContent}
+      main={mainContent}
+    />
   )
 }
 
-/** creates the header */
-function header (props: HeaderProps) {
+/**
+ * creates the header
+ *
+ * @param props
+ */
+function header(props: HeaderProps): JSX.Element {
   const { classes, totalLabels, totalTaskLabeled, numUsers, vendor } = props
   return (
-    <React.Fragment>
-      <Typography variant='h6' noWrap>
-        {vendor ? 'Vendor Dashboard' : 'Project Dashboard'}
+    <>
+      <Typography variant="h6" noWrap>
+        {vendor !== undefined && vendor
+          ? "Vendor Dashboard"
+          : "Project Dashboard"}
       </Typography>
       <div className={classes.grow} />
-      {vendor ? null :
+      {vendor !== undefined && vendor ? null : (
         <React.Fragment>
-          <Typography variant='body1' noWrap>
+          <Typography variant="body1" noWrap>
             Labeled Tasks
-                      </Typography>
-          <Chip label={totalTaskLabeled} className={classes.chip}
-            data-testid='total-tasks' />
-          <Typography variant='body1' noWrap>
+          </Typography>
+          <Chip
+            label={totalTaskLabeled}
+            className={classes.chip}
+            data-testid="total-tasks"
+          />
+          <Typography variant="body1" noWrap>
             Total Labels
-                      </Typography>
-          <Chip label={totalLabels} className={classes.chip}
-            data-testid='total-labels' />
-          <Typography variant='body1' noWrap>
+          </Typography>
+          <Chip
+            label={totalLabels}
+            className={classes.chip}
+            data-testid="total-labels"
+          />
+          <Typography variant="body1" noWrap>
             Users
-                      </Typography>
-          <Chip label={numUsers} className={classes.chip}
-            data-testid='num-users' />
-        </React.Fragment>}
-    </React.Fragment>
+          </Typography>
+          <Chip
+            label={numUsers}
+            className={classes.chip}
+            data-testid="num-users"
+          />
+        </React.Fragment>
+      )}
+    </>
   )
 }
 
-/** creates the sidebar */
-function sidebar (props: SidebarProps) {
+/**
+ * creates the sidebar
+ *
+ * @param props
+ */
+function sidebar(props: SidebarProps): JSX.Element {
   const { classes, projectMetaData, vendor } = props
   const sidebarListItems = [
-    { tag: 'Project Name', entry: projectMetaData.name },
-    { tag: 'Item Type', entry: projectMetaData.itemType },
-    { tag: 'Label Type', entry: projectMetaData.labelTypes[0] },
-    { tag: 'Task Size', entry: projectMetaData.taskSize },
-    { tag: '# Items', entry: projectMetaData.numItems },
-    { tag: '# Categories', entry: projectMetaData.numLeafCategories },
-    { tag: '# Attributes', entry: projectMetaData.numAttributes }
+    { tag: "Project Name", entry: projectMetaData.name },
+    { tag: "Item Type", entry: projectMetaData.itemType },
+    { tag: "Label Type", entry: projectMetaData.labelTypes[0] },
+    { tag: "Task Size", entry: projectMetaData.taskSize },
+    { tag: "# Items", entry: projectMetaData.numItems },
+    { tag: "# Categories", entry: projectMetaData.numLeafCategories },
+    { tag: "# Attributes", entry: projectMetaData.numAttributes }
   ]
-  return (<React.Fragment>
-    <List className={classes.listRoot}>
-      {sidebarListItems.map((value, index) =>
-        <ListItemText
-          key={value.tag}
-          className={!(index % 2) ?
-            `${classes.listItem} ${classes.coloredListItem}` : classes.listItem}
-          primary={
-            <StyledListEntry tag={value.tag} entry={value.entry} />
-          }
-        />
-      )
-      }
-    </List>
-    {vendor ? null :
-      <React.Fragment>
-        <Link
-          variant='button'
-          className={classes.link}
-          color='inherit'
-          href={
-            `.${Endpoint.EXPORT}?project_name=` +
-            projectMetaData.name
-          }
-          data-testid='export-link'
-        >
-          EXPORT RESULTS
-              </Link>
-        < Link
-          variant='body2'
-          className={classes.link}
-          color='inherit'
-          href={'./postDownloadTaskURL?project_name=' +
-            projectMetaData.name}
-          data-testid='download-link'
-
-        >
-          DOWNLOAD ASSIGNMENT URLS
-              </Link>
-      </React.Fragment>}
-
-  </React.Fragment>)
+  return (
+    <>
+      <List className={classes.listRoot}>
+        {sidebarListItems.map((value, index) => (
+          <ListItemText
+            key={value.tag}
+            className={
+              index % 2 === 0
+                ? `${classes.listItem} ${classes.coloredListItem}`
+                : classes.listItem
+            }
+            primary={<StyledListEntry tag={value.tag} entry={value.entry} />}
+          />
+        ))}
+      </List>
+      {vendor !== undefined && vendor ? null : (
+        <>
+          <Button
+            variant="contained"
+            color="primary"
+            className={classes.link}
+            startIcon={<CloudDownloadIcon />}
+            href={`.${Endpoint.EXPORT}?project_name=` + projectMetaData.name}
+          >
+            DOWNLOAD LABELS
+          </Button>
+          {/* <Link
+            variant="body2"
+            className={classes.link}
+            color="inherit"
+            href={"./postDownloadTaskURL?project_name=" + projectMetaData.name}
+            data-testid="download-link"
+          >
+            DOWNLOAD ASSIGNMENT URLS
+          </Link> */}
+        </>
+      )}
+    </>
+  )
 }
 
-/** sidebar list entry */
-function listEntry (props: ListEntryProps) {
+/**
+ * sidebar list entry
+ *
+ * @param props
+ */
+function listEntry(props: ListEntryProps): JSX.Element {
   const { classes, tag, entry } = props
   return (
     <React.Fragment>
-      <Grid spacing={1}
-        alignItems={'baseline'}
-        justify={'space-around'}
+      <Grid
+        spacing={1}
+        alignItems={"baseline"}
+        justify={"space-around"}
         className={classes.listContainer}
-        container>
+        container
+      >
         <Grid item xs>
-          <Typography
-            className={classes.listTag}
-            variant='body2'>
+          <Typography className={classes.listTag} variant="body2">
             {tag}
           </Typography>
         </Grid>
         <Grid item xs>
-          <Typography
-            className={classes.listEntry}
-            variant='body2'
-          >
+          <Typography className={classes.listEntry} variant="body2">
             {entry}
           </Typography>
         </Grid>
@@ -366,4 +412,4 @@ export const StyledHeader = withStyles(headerStyle)(header)
 export const StyledSidebar = withStyles(sidebarStyle)(sidebar)
 const StyledListEntry = withStyles(listEntryStyle)(listEntry)
 /** export dashboard page */
-export default withStyles(dashboardWindowStyles, { withTheme: true })(Dashboard)
+export default withStyles(dashboardWindowStyles)(Dashboard)

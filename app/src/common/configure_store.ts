@@ -1,24 +1,30 @@
-import { applyMiddleware, createStore, Middleware, Reducer } from 'redux'
-import { createLogger } from 'redux-logger'
-import thunk from 'redux-thunk'
-import undoable, { includeAction } from 'redux-undo'
-import { ADD_LABELS, DELETE_LABELS } from '../const/action'
-import { makeState } from '../functional/states'
-import { FullStore, ReduxState } from '../types/redux'
-import { State } from '../types/state'
-import { reducer } from './reducer'
+import { applyMiddleware, createStore, Middleware, Reducer } from "redux"
+import { createLogger } from "redux-logger"
+import thunk from "redux-thunk"
+import undoable, { includeAction } from "redux-undo"
+
+import { ADD_LABELS, DELETE_LABELS } from "../const/action"
+import { makeState } from "../functional/states"
+import { FullStore, ReduxState } from "../types/redux"
+import { State } from "../types/state"
+import { reducer } from "./reducer"
 
 /**
  * Configure the main store for the state
+ *
  * @param {Partial<State>} json: initial state
  * @param {boolean} devMode: whether to turn on dev mode
  * @param {Middleware} middleware: optional middleware for redux
- * @return {Store<ReduxState>}
+ * @param initialState
+ * @param devMode
+ * @param middleware
+ * @returns {Store<ReduxState>}
  */
-export function configureStore (
-    initialState: Partial<State>,
-    devMode: boolean = false,
-    middleware?: Middleware): FullStore {
+export function configureStore(
+  initialState: Partial<State>,
+  devMode: boolean = false,
+  middleware?: Middleware
+): FullStore {
   const initialHistory = {
     past: Array<State>(),
     present: makeState(initialState),
@@ -47,7 +53,7 @@ export function configureStore (
     })
     allMiddleware.push(logger)
   }
-  if (middleware) {
+  if (middleware !== undefined) {
     allMiddleware.push(middleware)
   }
 

@@ -1,11 +1,13 @@
-import { MuiThemeProvider } from '@material-ui/core/styles'
-import React from 'react'
-import ReactDOM from 'react-dom'
-import Create from '../components/create_project'
-import { myTheme } from '../styles/theme'
+import { ThemeProvider } from "@material-ui/core/styles"
+import React from "react"
+import ReactDOM from "react-dom"
+
+import Create from "../components/create_project"
+import { scalabelTheme } from "../styles/theme"
 
 ReactDOM.render(
-  <MuiThemeProvider theme={myTheme}>
+  <ThemeProvider theme={scalabelTheme}>
     <Create />
-  </MuiThemeProvider>
-  , document.getElementById('create-root'))
+  </ThemeProvider>,
+  document.getElementById("create-root")
+)

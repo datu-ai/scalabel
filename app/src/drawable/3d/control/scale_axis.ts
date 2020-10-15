@@ -1,39 +1,50 @@
-import * as THREE from 'three'
-import Label3D from '../label3d'
-import { ControlUnit } from './controller'
+import * as THREE from "three"
+
+import Label3D from "../label3d"
+import { ControlUnit } from "./controller"
 
 /**
  * Unit for scaling object in certain direction
  */
 export class ScaleAxis extends THREE.Group implements ControlUnit {
   /** axis to scale */
-  private _axis: 'x' | 'y' | 'z'
+  private readonly _axis: "x" | "y" | "z"
   /** direction for scaling */
-  private _direction: THREE.Vector3
+  private readonly _direction: THREE.Vector3
   /** line */
-  private _line: THREE.Line
+  private readonly _line: THREE.Line
   /** guideline */
-  private _guideline: THREE.Line
+  private readonly _guideline: THREE.Line
   /** box */
-  private _box: THREE.Mesh
+  private readonly _box: THREE.Mesh
   /** side length */
-  private _sideLength: number
+  private readonly _sideLength: number
 
-  constructor (axis: 'x' | 'y' | 'z',
-               negate: boolean,
-               color: number,
-               sideLength: number = 0.4) {
+  /**
+   * Constructor
+   *
+   * @param axis
+   * @param negate
+   * @param color
+   * @param sideLength
+   */
+  constructor(
+    axis: "x" | "y" | "z",
+    negate: boolean,
+    color: number,
+    sideLength: number = 0.4
+  ) {
     super()
     this._axis = axis
     this._direction = new THREE.Vector3()
     switch (this._axis) {
-      case 'x':
+      case "x":
         this._direction.x = 1
         break
-      case 'y':
+      case "y":
         this._direction.y = 1
         break
-      case 'z':
+      case "z":
         this._direction.z = 1
         break
     }
@@ -44,8 +55,8 @@ export class ScaleAxis extends THREE.Group implements ControlUnit {
 
     const lineGeometry = new THREE.BufferGeometry()
     lineGeometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute([ 0, 0, 0, 0, 0, 1 ], 3)
+      "position",
+      new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 1], 3)
     )
     this._line = new THREE.Line(
       lineGeometry,
@@ -55,8 +66,8 @@ export class ScaleAxis extends THREE.Group implements ControlUnit {
 
     const guidelineGeometry = new THREE.BufferGeometry()
     guidelineGeometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute([ 0, 0, -10, 0, 0, 10 ], 3)
+      "position",
+      new THREE.Float32BufferAttribute([0, 0, -10, 0, 0, 10], 3)
     )
     this._guideline = new THREE.Line(
       guidelineGeometry,
@@ -86,8 +97,17 @@ export class ScaleAxis extends THREE.Group implements ControlUnit {
     this._box.layers.enableAll()
   }
 
-  /** get update vectors: [translation, rotation, scale, new intersection] */
-  public transform (
+  /**
+   * get update vectors: [translation, rotation, scale, new intersection]
+   *
+   * @param oldIntersection
+   * @param newProjection
+   * @param dragPlane
+   * @param labels
+   * @param bounds
+   * @param local
+   */
+  public transform(
     oldIntersection: THREE.Vector3,
     newProjection: THREE.Ray,
     dragPlane: THREE.Plane,
@@ -101,7 +121,7 @@ export class ScaleAxis extends THREE.Group implements ControlUnit {
     const worldDirection = new THREE.Vector3()
     worldDirection.copy(this._direction)
 
-    if (this.parent) {
+    if (this.parent !== null) {
       const worldQuaternion = new THREE.Quaternion()
       this.parent.getWorldQuaternion(worldQuaternion)
       worldDirection.applyQuaternion(worldQuaternion)
@@ -113,7 +133,8 @@ export class ScaleAxis extends THREE.Group implements ControlUnit {
     translationNormal.crossVectors(translationCoplanar, worldDirection)
     const translationPlane = new THREE.Plane()
     translationPlane.setFromNormalAndCoplanarPoint(
-      translationNormal, oldIntersection
+      translationNormal,
+      oldIntersection
     )
 
     const newIntersection = new THREE.Vector3()
@@ -175,25 +196,29 @@ export class ScaleAxis extends THREE.Group implements ControlUnit {
 
   /**
    * Set highlighted
+   *
    * @param object
+   * @param intersection
    */
-  public setHighlighted (intersection ?: THREE.Intersection): boolean {
-    { (this._box.material as THREE.Material).needsUpdate = true }
-    { (this._line.material as THREE.Material).needsUpdate = true }
+  public setHighlighted(intersection?: THREE.Intersection): boolean {
+    ;(this._box.material as THREE.Material).needsUpdate = true
+    ;(this._line.material as THREE.Material).needsUpdate = true
+
     if (
-      intersection && (
-        intersection.object === this ||
+      intersection !== undefined &&
+      (intersection.object === this ||
         intersection.object === this._line ||
-        intersection.object === this._box
-      )
+        intersection.object === this._box)
     ) {
-      { (this._box.material as THREE.Material).opacity = 0.9 }
-      { (this._line.material as THREE.Material).opacity = 0.9 }
+      ;(this._box.material as THREE.Material).opacity = 0.9
+      ;(this._line.material as THREE.Material).opacity = 0.9
+
       this.add(this._guideline)
       return true
     } else {
-      { (this._box.material as THREE.Material).opacity = 0.65 }
-      { (this._line.material as THREE.Material).opacity = 0.65 }
+      ;(this._box.material as THREE.Material).opacity = 0.65
+      ;(this._line.material as THREE.Material).opacity = 0.65
+
       this.remove(this._guideline)
       return false
     }
@@ -202,40 +227,40 @@ export class ScaleAxis extends THREE.Group implements ControlUnit {
   /**
    * Set faded when another object is highlighted
    */
-  public setFaded (): void {
-    { (this._box.material as THREE.Material).needsUpdate = true }
-    { (this._line.material as THREE.Material).needsUpdate = true }
-    { (this._box.material as THREE.Material).opacity = 0.25 }
-    { (this._line.material as THREE.Material).opacity = 0.25 }
+  public setFaded(): void {
+    ;(this._box.material as THREE.Material).needsUpdate = true
+    ;(this._line.material as THREE.Material).needsUpdate = true
+    ;(this._box.material as THREE.Material).opacity = 0.25
+    ;(this._line.material as THREE.Material).opacity = 0.25
   }
 
   /**
    * Override ThreeJS raycast to intersect with box
+   *
    * @param raycaster
    * @param intersects
    */
-  public raycast (
+  public raycast(
     raycaster: THREE.Raycaster,
     intersects: THREE.Intersection[]
-  ) {
+  ): void {
     this._line.raycast(raycaster, intersects)
     this._box.raycast(raycaster, intersects)
   }
 
   /**
    * Update scale according to world scale
+   *
    * @param worldScale
    */
-  public updateScale (worldScale: THREE.Vector3) {
-    if (this.parent) {
+  public updateScale(worldScale: THREE.Vector3): void {
+    if (this.parent !== null) {
       const direction = new THREE.Vector3()
       direction.copy(this._direction)
       // Direction.applyQuaternion(worldQuaternion.inverse())
 
-      const newScale = Math.abs(direction.dot(worldScale)) * 3. / 4.
-
+      const newScale = (Math.abs(direction.dot(worldScale)) * 3) / 4
       this._line.scale.set(1, 1, newScale)
-
       this._box.position.z = newScale
     }
   }

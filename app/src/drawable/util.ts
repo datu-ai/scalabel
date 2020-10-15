@@ -1,5 +1,5 @@
-import { id2int, isValidId } from '../functional/states'
-import { IdType } from '../types/state'
+import { id2int, isValidId } from "../functional/states"
+import { IdType } from "../types/state"
 
 // Constants
 const COLOR_PALETTE = [
@@ -27,17 +27,26 @@ const COLOR_PALETTE = [
 
 /**
  * Tune the shade or tint of rgb color
+ *
  * @param {[number,number,number]} rgb: input color
  * @param {[number,number,number]} base: base color (white or black)
  * @param {number} ratio: blending ratio
+ * @param rgb
+ * @param base
+ * @param ratio
  * @return {[number,number,number]}
  */
-export function blendColor (rgb: number[], base: number[], ratio: number):
- number[] {
+export function blendColor(
+  rgb: number[],
+  base: number[],
+  ratio: number
+): number[] {
   const newRgb = [0, 0, 0]
   for (let i = 0; i < 3; i++) {
-    newRgb[i] = Math.max(0,
-      Math.min(255, rgb[i] + Math.round((base[i] - rgb[i]) * ratio)))
+    newRgb[i] = Math.max(
+      0,
+      Math.min(255, rgb[i] + Math.round((base[i] - rgb[i]) * ratio))
+    )
   }
   return newRgb
 }
@@ -45,12 +54,14 @@ export function blendColor (rgb: number[], base: number[], ratio: number):
 /**
  * Pick color from the palette. Add additional shades and tints to increase
  * the color number. Results: https://jsfiddle.net/739397/e980vft0/
+ *
  * @param {number} index: palette index
+ * @param index
  * @return {[number,number,number]}
  */
-function pickColorPalette (index: number): number[] {
+function pickColorPalette(index: number): number[] {
   const colorIndex = index % COLOR_PALETTE.length
-  const shadeIndex = (Math.floor(index / COLOR_PALETTE.length)) % 3
+  const shadeIndex = Math.floor(index / COLOR_PALETTE.length) % 3
   let rgb = COLOR_PALETTE[colorIndex]
   if (shadeIndex === 1) {
     rgb = blendColor(rgb, [255, 255, 255], 0.4)
@@ -62,20 +73,23 @@ function pickColorPalette (index: number): number[] {
 
 /**
  * Convert numerical id to color value in range of [0, 255]
+ *
  * @param {IdType} labelId
  * @param {IdType} trackId
  * @return {number[]}
  */
-export function getColorById (labelId: IdType, trackId: IdType): number[] {
-  const id = (isValidId(trackId)) ? trackId : labelId
+export function getColorById(labelId: IdType, trackId: IdType): number[] {
+  const id = isValidId(trackId) ? trackId : labelId
   return pickColorPalette(id2int(id))
 }
 
 /**
  * Convert numerical color to CSS color string
+ *
  * @param {number[]} color: can have 3 or 4 elements
+ * @param color
  */
-export function toCssColor (color: number[]): string {
+export function toCssColor(color: number[]): string {
   if (color.length === 3) {
     return `rgb(${color[0]}, ${color[1]}, ${color[2]})`
   } else if (color.length === 4) {
@@ -87,14 +101,15 @@ export function toCssColor (color: number[]): string {
 
 export type Context2D = CanvasRenderingContext2D
 
-/* tslint:disable:no-bitwise */
+/* eslint-disable no-bitwise */
 
 /**
  * Get the label and shape IDs given the control index
+ *
  * @param {number} index
  * @return {[number, number]}
  */
-export function decodeControlIndex (index: number): number[] {
+export function decodeControlIndex(index: number): number[] {
   return [((index >> 12) & 1023) - 2, index & 1023]
 }
 
@@ -102,22 +117,26 @@ export function decodeControlIndex (index: number): number[] {
  * Get the control color given the label and handle IDs.
  * In the resulting 24bit color, the first 12 bits are for label and the other
  * 12 bits are for handle
+ *
  * @param {number} labelId
  * @param {number} handleId
  * @return {number[]}
  */
-export function encodeControlColor (
-  labelId: number, handleId: number): number[] {
+export function encodeControlColor(
+  labelId: number,
+  handleId: number
+): number[] {
   const index = ((labelId + 2) << 12) | handleId
-  return [(index >> 16) & 255, (index >> 8) & 255, (index & 255)]
+  return [(index >> 16) & 255, (index >> 8) & 255, index & 255]
 }
 
 /**
  * Get index from rgb color
+ *
  * @param {number[]} color - The rgb color
  * @return {number} - The encoded index.
  */
-export function rgbToIndex (color: number[]): number {
-  const index = (color[0] << 16) | (color[1] << 8) | (color[2])
+export function rgbToIndex(color: number[]): number {
+  const index = (color[0] << 16) | (color[1] << 8) | color[2]
   return index
 }

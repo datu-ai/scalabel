@@ -1,26 +1,31 @@
-import * as THREE from 'three'
-import Label3D from '../label3d'
-import { ControlUnit } from './controller'
+import * as THREE from "three"
+
+import Label3D from "../label3d"
+import { ControlUnit } from "./controller"
 
 /**
  * ThreeJS object used for moving parent object along certain axis
  */
-export class TranslationAxis extends THREE.Group
-  implements ControlUnit {
+export class TranslationAxis extends THREE.Group implements ControlUnit {
   /** Translation direction (180 degree symmetric) */
-  private _direction: THREE.Vector3
+  private readonly _direction: THREE.Vector3
   /** cone size */
-  private _coneSize: number
+  private readonly _coneSize: number
   /** line */
-  private _line: THREE.Line
+  private readonly _line: THREE.Line
   /** guideline */
-  private _guideline: THREE.Line
+  private readonly _guideline: THREE.Line
   /** cone */
-  private _cone: THREE.Mesh
+  private readonly _cone: THREE.Mesh
 
-  constructor (
-    direction: THREE.Vector3, color: number, coneSize: number = 0.3
-  ) {
+  /**
+   * Constructor
+   *
+   * @param direction
+   * @param color
+   * @param coneSize
+   */
+  constructor(direction: THREE.Vector3, color: number, coneSize: number = 0.3) {
     super()
     this._coneSize = coneSize
 
@@ -30,8 +35,8 @@ export class TranslationAxis extends THREE.Group
 
     const lineGeometry = new THREE.BufferGeometry()
     lineGeometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute([ 0, 0, 0, 0, 1, 0 ], 3)
+      "position",
+      new THREE.Float32BufferAttribute([0, 0, 0, 0, 1, 0], 3)
     )
     this._line = new THREE.Line(
       lineGeometry,
@@ -41,8 +46,8 @@ export class TranslationAxis extends THREE.Group
 
     const guidelineGeometry = new THREE.BufferGeometry()
     guidelineGeometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute([ 0, -10, 0, 0, 10, 0 ], 3)
+      "position",
+      new THREE.Float32BufferAttribute([0, -10, 0, 0, 10, 0], 3)
     )
     this._guideline = new THREE.Line(
       guidelineGeometry,
@@ -56,10 +61,10 @@ export class TranslationAxis extends THREE.Group
     )
     this.add(this._cone)
 
-    this._line.scale.set(1, .75 - this._coneSize, 1)
+    this._line.scale.set(1, 0.75 - this._coneSize, 1)
 
     this._cone.scale.set(this._coneSize, this._coneSize, this._coneSize)
-    this._cone.position.y = .75
+    this._cone.position.y = 0.75
 
     const quaternion = new THREE.Quaternion()
     quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), this._direction)
@@ -73,11 +78,15 @@ export class TranslationAxis extends THREE.Group
 
   /**
    * Mouse movement while mouse down on box (from raycast)
+   *
    * @param oldIntersection
    * @param newProjection
    * @param dragPlane
+   * @param labels
+   * @param _bounds
+   * @param local
    */
-  public transform (
+  public transform(
     oldIntersection: THREE.Vector3,
     newProjection: THREE.Ray,
     dragPlane: THREE.Plane,
@@ -95,7 +104,7 @@ export class TranslationAxis extends THREE.Group
     const worldDirection = new THREE.Vector3()
     worldDirection.copy(this._direction)
 
-    if (this.parent) {
+    if (this.parent !== null) {
       const worldQuaternion = new THREE.Quaternion()
       this.parent.getWorldQuaternion(worldQuaternion)
       worldDirection.applyQuaternion(worldQuaternion)
@@ -107,7 +116,8 @@ export class TranslationAxis extends THREE.Group
     translationNormal.crossVectors(translationCoplanar, worldDirection)
     const translationPlane = new THREE.Plane()
     translationPlane.setFromNormalAndCoplanarPoint(
-      translationNormal, oldIntersection
+      translationNormal,
+      oldIntersection
     )
 
     const newIntersection = new THREE.Vector3()
@@ -139,25 +149,29 @@ export class TranslationAxis extends THREE.Group
 
   /**
    * Set highlighted
+   *
    * @param object
+   * @param intersection
    */
-  public setHighlighted (intersection ?: THREE.Intersection): boolean {
-    { (this._line.material as THREE.Material).needsUpdate = true }
-    { (this._cone.material as THREE.Material).needsUpdate = true }
+  public setHighlighted(intersection?: THREE.Intersection): boolean {
+    ;(this._line.material as THREE.Material).needsUpdate = true
+    ;(this._cone.material as THREE.Material).needsUpdate = true
+
     if (
-      intersection && (
-        intersection.object === this ||
+      intersection !== undefined &&
+      (intersection.object === this ||
         intersection.object === this._line ||
-        intersection.object === this._cone
-      )
+        intersection.object === this._cone)
     ) {
-      { (this._line.material as THREE.Material).opacity = 0.9 }
-      { (this._cone.material as THREE.Material).opacity = 0.9 }
+      ;(this._line.material as THREE.Material).opacity = 0.9
+      ;(this._cone.material as THREE.Material).opacity = 0.9
+
       this.add(this._guideline)
       return true
     } else {
-      { (this._line.material as THREE.Material).opacity = 0.65 }
-      { (this._cone.material as THREE.Material).opacity = 0.65 }
+      ;(this._line.material as THREE.Material).opacity = 0.65
+      ;(this._cone.material as THREE.Material).opacity = 0.65
+
       this.remove(this._guideline)
       return false
     }
@@ -166,37 +180,39 @@ export class TranslationAxis extends THREE.Group
   /**
    * Set faded when another object is highlighted
    */
-  public setFaded (): void {
-    { (this._line.material as THREE.Material).needsUpdate = true }
-    { (this._cone.material as THREE.Material).needsUpdate = true }
-    { (this._line.material as THREE.Material).opacity = 0.25 }
-    { (this._cone.material as THREE.Material).opacity = 0.25 }
+  public setFaded(): void {
+    ;(this._line.material as THREE.Material).needsUpdate = true
+    ;(this._cone.material as THREE.Material).needsUpdate = true
+    ;(this._line.material as THREE.Material).opacity = 0.25
+    ;(this._cone.material as THREE.Material).opacity = 0.25
   }
 
   /**
    * Override ThreeJS raycast to intersect with box
+   *
    * @param raycaster
    * @param intersects
    */
-  public raycast (
+  public raycast(
     raycaster: THREE.Raycaster,
     intersects: THREE.Intersection[]
-  ) {
+  ): void {
     this._line.raycast(raycaster, intersects)
     this._cone.raycast(raycaster, intersects)
   }
 
   /**
    * Update scale according to world scale
+   *
    * @param worldScale
    */
-  public updateScale (worldScale: THREE.Vector3) {
-    if (this.parent) {
+  public updateScale(worldScale: THREE.Vector3): void {
+    if (this.parent !== null) {
       const direction = new THREE.Vector3()
       direction.copy(this._direction)
       // Direction.applyQuaternion(worldQuaternion.inverse())
 
-      const newScale = Math.abs(direction.dot(worldScale)) * 3. / 4.
+      const newScale = (Math.abs(direction.dot(worldScale)) * 3) / 4
 
       this._line.scale.set(1, newScale, 1)
 

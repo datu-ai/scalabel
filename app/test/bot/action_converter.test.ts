@@ -15,10 +15,13 @@ beforeAll(() => {
   url = 'testurl'
 })
 
-describe('test model interface query construction', () => {
-  test('rect query construction', () => {
+describe("test model interface query construction", () => {
+  test("rect query construction", () => {
     const rect: RectType = makeRect({
-      x1: 5, y1: 2, x2: 6, y2: 10
+      x1: 5,
+      y1: 2,
+      x2: 6,
+      y2: 10
     })
     const itemIndex = 1
     const rectAction = addBox2dLabel(itemIndex, 0, [], {}, rect)
@@ -42,7 +45,7 @@ describe('test model interface query construction', () => {
     expect(box2d.y2).toEqual(rect.y2)
   })
 
-  test('poly query construction', () => {
+  test("poly query construction", () => {
     const points = [
       makePathPoint2D({ x: 0, y: 1, pointType: PathPointType.LINE }),
       makePathPoint2D({ x: 5, y: 3, pointType: PathPointType.LINE })
@@ -64,9 +67,12 @@ describe('test model interface query construction', () => {
   })
 })
 
-describe('test model interface action translation', () => {
-  test('poly action translation', () => {
-    const polyPoints = [[1, 5], [100, -5]]
+describe("test model interface action translation", () => {
+  test("poly action translation", () => {
+    const polyPoints = [
+      [1, 5],
+      [100, -5]
+    ]
     const itemIndex = 3
     const action = makePolyAction(polyPoints, itemIndex, sessionId)
     expect(action.sessionId).toBe(sessionId)
@@ -75,7 +81,7 @@ describe('test model interface action translation', () => {
     expect(label.manual).toBe(false)
 
     const points = action.shapes[0][0] as PathPoint2DType[]
-    expect(points[0]).toMatchObject({ x: 1, y: 5, pointType: 'line' })
-    expect(points[1]).toMatchObject({ x: 100, y: - 5, pointType: 'line' })
+    expect(points[0]).toMatchObject({ x: 1, y: 5, pointType: "line" })
+    expect(points[1]).toMatchObject({ x: 100, y: -5, pointType: "line" })
   })
 })

@@ -1,31 +1,47 @@
-import { getStateGetter } from '../common/session'
-import { GetStateFunc } from '../common/simple_store'
-import { uid } from '../common/uid'
-import * as actionConsts from '../const/action'
-import * as selector from '../functional/selector'
-import * as actionTypes from '../types/action'
-import { SyncActionMessageType } from '../types/message'
-import { ThunkCreatorType } from '../types/redux'
-import { ConnectionStatus, DeepPartialState, IdType, LabelType,
-  PaneType, Select, ShapeAllType, ShapeType, SplitType,
-  State, TaskType, ViewerConfigType } from '../types/state'
+import { getStateGetter } from "../common/session"
+import { GetStateFunc } from "../common/simple_store"
+import { uid } from "../common/uid"
+import * as actionConsts from "../const/action"
+import * as selector from "../functional/selector"
+import * as actionTypes from "../types/action"
+import { SyncActionMessageType } from "../types/message"
+import { ThunkCreatorType } from "../types/redux"
+import {
+  ConnectionStatus,
+  DeepPartialState,
+  IdType,
+  LabelType,
+  PaneType,
+  Select,
+  ShapeAllType,
+  ShapeType,
+  SplitType,
+  State,
+  TaskType,
+  ViewerConfigType
+} from "../types/state"
 
 let getState = getStateGetter()
 
 /**
  * Set the state getter for actions
+ *
  * @param getter
  */
-export function setActionStateGetter (getter: GetStateFunc) {
+export function setActionStateGetter(getter: GetStateFunc): void {
   getState = getter
 }
 
 /**
  * Make the base action that can be extended by the other actions
+ *
  * @param type
+ * @param frontendOnly
  */
-export function makeBaseAction (
-  type: string, frontendOnly: boolean = false): actionTypes.BaseAction {
+export function makeBaseAction(
+  type: string,
+  frontendOnly: boolean = false
+): actionTypes.BaseAction {
   const state = getState()
   return {
     actionId: uid(),
@@ -39,9 +55,10 @@ export function makeBaseAction (
 
 /**
  * Make a null action
+ *
  * @param message
  */
-export function makeNullAction (message: string = ''): actionTypes.NullAction {
+export function makeNullAction(message: string = ""): actionTypes.NullAction {
   return {
     ...makeBaseAction(actionConsts.NULL),
     message
@@ -49,25 +66,30 @@ export function makeNullAction (message: string = ''): actionTypes.NullAction {
 }
 
 /** init session */
-export function initSessionAction (): actionTypes.InitSessionAction {
+export function initSessionAction(): actionTypes.InitSessionAction {
   return makeBaseAction(actionConsts.INIT_SESSION)
 }
 
 /** Update task data
+ *
  * @param {TaskType} newTask
  */
-export function updateTask (newTask: TaskType): actionTypes.UpdateTaskAction {
+export function updateTask(newTask: TaskType): actionTypes.UpdateTaskAction {
   return {
     ...makeBaseAction(actionConsts.UPDATE_TASK, true),
     newTask
   }
 }
 
-/** Initialize state data
+/**
+ * Initialize state data
+ *
  * @param {TaskType} newTask
+ * @param newState
  */
-export function updateState (
-  newState: DeepPartialState): actionTypes.UpdateStateAction {
+export function updateState(
+  newState: DeepPartialState
+): actionTypes.UpdateStateAction {
   return {
     ...makeBaseAction(actionConsts.UPDATE_STATE, true),
     newState
@@ -76,10 +98,11 @@ export function updateState (
 
 /**
  * Go to item at index
+ *
  * @param {number} index
- * @return {actionTypes.ChangeSelectAction}
+ * @returns {actionTypes.ChangeSelectAction}
  */
-export function goToItem (index: number): actionTypes.ChangeSelectAction {
+export function goToItem(index: number): actionTypes.ChangeSelectAction {
   // Normally, unselect labels when item changes
   let newSelect: Partial<Select> = {
     item: index,
@@ -102,10 +125,12 @@ export function goToItem (index: number): actionTypes.ChangeSelectAction {
 
 /**
  * Change the current selection
+ *
  * @param select
  */
-export function changeSelect (
-    select: Partial<Select>): actionTypes.ChangeSelectAction {
+export function changeSelect(
+  select: Partial<Select>
+): actionTypes.ChangeSelectAction {
   return {
     ...makeBaseAction(actionConsts.CHANGE_SELECT),
     select
@@ -114,8 +139,11 @@ export function changeSelect (
 
 /**
  * Create load item action
+ *
+ * @param itemIndex
+ * @param sensorId
  */
-export function loadItem (
+export function loadItem(
   itemIndex: number,
   sensorId: number
 ): actionTypes.LoadItemAction {
@@ -128,12 +156,13 @@ export function loadItem (
 
 /**
  * Add label to the item
+ *
  * @param {number} itemIndex
  * @param {LabelType} label
  * @param {ShapeType[]} shapes
- * @return {AddLabelAction}
+ * @returns {AddLabelAction}
  */
-export function addLabel (
+export function addLabel(
   itemIndex: number,
   label: LabelType,
   shapes: ShapeType[] = []
@@ -148,11 +177,12 @@ export function addLabel (
 
 /**
  * Add labels to a single item
+ *
  * @param itemIndex
  * @param labels
  * @param shapes
  */
-export function addLabelsToItem (
+export function addLabelsToItem(
   itemIndex: number,
   labels: LabelType[],
   shapes: ShapeType[][] = []
@@ -167,12 +197,14 @@ export function addLabelsToItem (
 
 /**
  * Add a track
+ *
  * @param itemIndices
+ * @param trackType
  * @param labels
  * @param shapeTypes
  * @param shapes
  */
-export function addTrack (
+export function addTrack(
   itemIndices: number[],
   trackType: string,
   labels: LabelType[],
@@ -189,14 +221,19 @@ export function addTrack (
 
 /**
  * Change the shape of the label
+ *
  * @param {number} itemIndex
  * @param {number} shapeId
  * @param {Partial<ShapeType>} props
- * @return {ChangeLabelShapeAction}
+ * @param shapeIds
+ * @param shapes
+ * @returns {ChangeLabelShapeAction}
  */
-export function changeShapes (
-    itemIndex: number, shapeIds: IdType[], shapes: Array<Partial<ShapeAllType>>
-  ): actionTypes.ChangeShapesAction {
+export function changeShapes(
+  itemIndex: number,
+  shapeIds: IdType[],
+  shapes: Array<Partial<ShapeAllType>>
+): actionTypes.ChangeShapesAction {
   return {
     ...makeBaseAction(actionConsts.CHANGE_SHAPES),
     itemIndices: [itemIndex],
@@ -207,12 +244,14 @@ export function changeShapes (
 
 /**
  * Change shapes in items
+ *
  * @param itemIndices
  * @param shapeIds
  * @param shapes
  */
-export function changeShapesInItems (
-  itemIndices: number[], shapeIds: IdType[][],
+export function changeShapesInItems(
+  itemIndices: number[],
+  shapeIds: IdType[][],
   shapes: Array<Array<Partial<ShapeType>>>
 ): actionTypes.ChangeShapesAction {
   return {
@@ -225,14 +264,18 @@ export function changeShapesInItems (
 
 /**
  * Change the shape of the label
+ *
  * @param {number} itemIndex
  * @param {number} shapeId
  * @param {Partial<ShapeType>} props
- * @return {ChangeLabelShapeAction}
+ * @param shape
+ * @returns {ChangeLabelShapeAction}
  */
-export function changeLabelShape (
-    itemIndex: number, shapeId: IdType, shape: Partial<ShapeType>
-  ): actionTypes.ChangeShapesAction {
+export function changeLabelShape(
+  itemIndex: number,
+  shapeId: IdType,
+  shape: Partial<ShapeType>
+): actionTypes.ChangeShapesAction {
   return {
     ...makeBaseAction(actionConsts.CHANGE_SHAPES),
     itemIndices: [itemIndex],
@@ -243,31 +286,38 @@ export function changeLabelShape (
 
 /**
  * Change the properties of the label
+ *
  * @param {number} itemIndex
  * @param {number} labelId
  * @param {Partial<LabelType>}props
- * @return {ChangeLabelPropsAction}
+ * @returns {ChangeLabelPropsAction}
  */
-export function changeLabelProps (
-    itemIndex: number, labelId: IdType, props: Partial<LabelType>
-  ): actionTypes.ChangeLabelsAction {
+export function changeLabelProps(
+  itemIndex: number,
+  labelId: IdType,
+  props: Partial<LabelType>
+): actionTypes.ChangeLabelsAction {
   return {
     ...makeBaseAction(actionConsts.CHANGE_LABELS),
     itemIndices: [itemIndex],
     labelIds: [[labelId]],
-    props: [[props ]]
+    props: [[props]]
   }
 }
 
 /**
  * Change the properties of the labels
+ *
  * @param {number} itemIndex
  * @param {number} labelId
- * @param {Partial<LabelType>}props
- * @return {ChangeLabelPropsAction}
+ * @param itemIndices
+ * @param labelIds
+ * @param {Partial<LabelType>} props
+ * @returns {ChangeLabelPropsAction}
  */
-export function changeLabelsProps (
-  itemIndices: number[], labelIds: IdType[][],
+export function changeLabelsProps(
+  itemIndices: number[],
+  labelIds: IdType[][],
   props: Array<Array<Partial<LabelType>>>
 ): actionTypes.ChangeLabelsAction {
   return {
@@ -280,11 +330,14 @@ export function changeLabelsProps (
 
 /**
  * Link labels
+ *
  * @param {number} itemIndex
  * @param {[]number} labelIds labels to link
  */
-export function linkLabels (
-    itemIndex: number, labelIds: IdType[]): actionTypes.LinkLabelsAction {
+export function linkLabels(
+  itemIndex: number,
+  labelIds: IdType[]
+): actionTypes.LinkLabelsAction {
   return {
     ...makeBaseAction(actionConsts.LINK_LABELS),
     itemIndex,
@@ -294,11 +347,14 @@ export function linkLabels (
 
 /**
  * unlink labels
+ *
  * @param {number} itemIndex
  * @param {[]number} labelIds labels to unlink
  */
-export function unlinkLabels (
-    itemIndex: number, labelIds: IdType[]): actionTypes.UnlinkLabelsAction {
+export function unlinkLabels(
+  itemIndex: number,
+  labelIds: IdType[]
+): actionTypes.UnlinkLabelsAction {
   return {
     ...makeBaseAction(actionConsts.UNLINK_LABELS),
     itemIndex,
@@ -308,9 +364,10 @@ export function unlinkLabels (
 
 /**
  * Merge tracks
+ *
  * @param trackIds
  */
-export function mergeTracks (trackIds: IdType[]): actionTypes.MergeTrackAction {
+export function mergeTracks(trackIds: IdType[]): actionTypes.MergeTrackAction {
   return {
     ...makeBaseAction(actionConsts.MERGE_TRACKS),
     trackIds
@@ -319,23 +376,29 @@ export function mergeTracks (trackIds: IdType[]): actionTypes.MergeTrackAction {
 
 /**
  * Delete given label
+ *
  * @param {number} itemIndex
  * @param {number} labelId
- * @return {DeleteLabelAction}
+ * @returns {DeleteLabelAction}
  */
-export function deleteLabel (
-    itemIndex: number, labelId: IdType): actionTypes.DeleteLabelsAction {
+export function deleteLabel(
+  itemIndex: number,
+  labelId: IdType
+): actionTypes.DeleteLabelsAction {
   return deleteLabels([itemIndex], [[labelId]])
 }
 
 /**
  * Delete all the input labels
+ *
  * @param {number[]} itemIndices
  * @param {number[][]} labelIds
- * @return {actionTypes.DeleteLabelsAction}
+ * @returns {actionTypes.DeleteLabelsAction}
  */
-export function deleteLabels (
-  itemIndices: number[], labelIds: IdType[][]): actionTypes.DeleteLabelsAction {
+export function deleteLabels(
+  itemIndices: number[],
+  labelIds: IdType[][]
+): actionTypes.DeleteLabelsAction {
   return {
     ...makeBaseAction(actionConsts.DELETE_LABELS),
     itemIndices,
@@ -345,9 +408,11 @@ export function deleteLabels (
 
 /**
  * Add new viewer config
+ *
+ * @param id
  * @param config
  */
-export function addViewerConfig (
+export function addViewerConfig(
   id: number,
   config: ViewerConfigType
 ): actionTypes.AddViewerConfigAction {
@@ -360,10 +425,14 @@ export function addViewerConfig (
 
 /**
  * Change viewer config
+ *
  * @param configs
+ * @param viewerId
+ * @param config
  */
-export function changeViewerConfig (
-  viewerId: number, config: ViewerConfigType
+export function changeViewerConfig(
+  viewerId: number,
+  config: ViewerConfigType
 ): actionTypes.ChangeViewerConfigAction {
   return {
     ...makeBaseAction(actionConsts.CHANGE_VIEWER_CONFIG),
@@ -372,18 +441,29 @@ export function changeViewerConfig (
   }
 }
 
-/** Toggle viewer config synchronization */
-export function toggleSynchronization (
-  viewerId: number, config: ViewerConfigType
-) {
-  return changeViewerConfig(
-    viewerId,
-    { ...config, synchronized: !config.synchronized }
-  )
+/**
+ * Toggle viewer config synchronization
+ *
+ * @param viewerId
+ * @param config
+ */
+export function toggleSynchronization(
+  viewerId: number,
+  config: ViewerConfigType
+): actionTypes.ChangeViewerConfigAction {
+  return changeViewerConfig(viewerId, {
+    ...config,
+    synchronized: !config.synchronized
+  })
 }
 
-/** action to updater pane */
-export function updatePane (
+/**
+ * action to updater pane
+ *
+ * @param pane
+ * @param props
+ */
+export function updatePane(
   pane: number,
   props: Partial<PaneType>
 ): actionTypes.UpdatePaneAction {
@@ -394,8 +474,14 @@ export function updatePane (
   }
 }
 
-/** action to split pane */
-export function splitPane (
+/**
+ * action to split pane
+ *
+ * @param pane
+ * @param split
+ * @param viewerId
+ */
+export function splitPane(
   pane: number,
   split: SplitType,
   viewerId: number
@@ -408,8 +494,13 @@ export function splitPane (
   }
 }
 
-/** action to delete pane */
-export function deletePane (
+/**
+ * action to delete pane
+ *
+ * @param pane
+ * @param viewerId
+ */
+export function deletePane(
   pane: number,
   viewerId: number
 ): actionTypes.DeletePaneAction {
@@ -423,14 +514,14 @@ export function deletePane (
 /**
  * wrapper for update all action
  */
-export function updateAll (): actionTypes.UpdateAllAction {
+export function updateAll(): actionTypes.UpdateAllAction {
   return makeBaseAction(actionConsts.UPDATE_ALL)
 }
 
 /**
  * wrapper for submit action
  */
-export function submit (): actionTypes.SubmitAction {
+export function submit(): actionTypes.SubmitAction {
   return {
     ...makeBaseAction(actionConsts.SUBMIT),
     submitData: {
@@ -443,14 +534,16 @@ export function submit (): actionTypes.SubmitAction {
 /**
  * start to link tracks
  */
-export function startLinkTrack () {
+export function startLinkTrack(): actionTypes.BaseAction {
   return makeBaseAction(actionConsts.START_LINK_TRACK)
 }
 
 /**
  * Finish session registration by loading backend state
+ *
+ * @param state
  */
-export function registerSession (
+export function registerSession(
   state: State
 ): actionTypes.RegisterSessionAction {
   return {
@@ -461,9 +554,12 @@ export function registerSession (
 
 /**
  * Handle broadcasted message contains one or more actions
+ *
+ * @param message
  */
-export function receiveBroadcast (
-  message: SyncActionMessageType): actionTypes.ReceiveBroadcastAction {
+export function receiveBroadcast(
+  message: SyncActionMessageType
+): actionTypes.ReceiveBroadcastAction {
   return {
     ...makeBaseAction(actionConsts.RECEIVE_BROADCAST),
     message
@@ -473,21 +569,21 @@ export function receiveBroadcast (
 /**
  * Handle session connection
  */
-export function connect (): actionTypes.ConnectAction {
+export function connect(): actionTypes.ConnectAction {
   return makeBaseAction(actionConsts.CONNECT)
 }
 
 /**
  * Handle session disconnection
  */
-export function disconnect (): actionTypes.DisconnectAction {
+export function disconnect(): actionTypes.DisconnectAction {
   return makeBaseAction(actionConsts.DISCONNECT)
 }
 
 /**
  * Trigger save to server
  */
-export function save (): actionTypes.SaveAction {
+export function save(): actionTypes.SaveAction {
   return makeBaseAction(actionConsts.SAVE)
 }
 
@@ -500,9 +596,12 @@ export function toggleBot (): actionTypes.ToggleBotAction {
 
 /**
  * Update session status
+ *
+ * @param status
  */
-export function updateSessionStatus (
-  status: ConnectionStatus): actionTypes.UpdateSessionStatusAction {
+export function updateSessionStatus(
+  status: ConnectionStatus
+): actionTypes.UpdateSessionStatusAction {
   return {
     ...makeBaseAction(actionConsts.UPDATE_SESSION_STATUS),
     newStatus: status
@@ -512,14 +611,14 @@ export function updateSessionStatus (
 /**
  * Mark status as reconnecting
  */
-export function setStatusToReconnecting () {
+export function setStatusToReconnecting(): actionTypes.UpdateSessionStatusAction {
   return updateSessionStatus(ConnectionStatus.RECONNECTING)
 }
 
 /**
  * Mark status as submitting
  */
-export function setStatusToSubmitting () {
+export function setStatusToSubmitting(): actionTypes.UpdateSessionStatusAction {
   return updateSessionStatus(ConnectionStatus.SUBMITTING)
 }
 
@@ -549,23 +648,28 @@ export const setStatusToUnsaved: ThunkCreatorType = () => {
  * After a connect/reconnect, mark status as unsaved
  * Regardless of previous status
  */
-export function setStatusAfterConnect () {
+export function setStatusAfterConnect(): actionTypes.UpdateSessionStatusAction {
   return updateSessionStatus(ConnectionStatus.UNSAVED)
 }
 
 /**
  * Mark status as computing
  */
-export function setStatusToComputing () {
+export function setStatusToComputing(): actionTypes.UpdateSessionStatusAction {
   return updateSessionStatus(ConnectionStatus.COMPUTING)
 }
 
 /**
  * After 5 seconds, fade out the previous message
  * If no other actions occurred in the meantime
+ *
+ * @param status
+ * @param numUpdates
  */
 export const updateSessionStatusDelayed: ThunkCreatorType = (
-  status: ConnectionStatus, numUpdates: number) => {
+  status: ConnectionStatus,
+  numUpdates: number
+) => {
   return (dispatch, localGetState) => {
     setTimeout(() => {
       const newNumUpdates = selector.getNumStatusUpdates(localGetState())
@@ -578,16 +682,18 @@ export const updateSessionStatusDelayed: ThunkCreatorType = (
 
 /**
  * Update submission banner and trigger fadeout animation
+ *
+ * @param notifyStatus
+ * @param fadeStatus
  */
 export const setStatusForBanner: ThunkCreatorType = (
-  notifyStatus: ConnectionStatus, fadeStatus: ConnectionStatus
+  notifyStatus: ConnectionStatus,
+  fadeStatus: ConnectionStatus
 ) => {
   return (dispatch, localGetState) => {
     const numUpdates = selector.getNumStatusUpdates(localGetState())
     dispatch(updateSessionStatus(notifyStatus))
-    dispatch(
-      updateSessionStatusDelayed(fadeStatus, numUpdates)
-    )
+    dispatch(updateSessionStatusDelayed(fadeStatus, numUpdates))
   }
 }
 
@@ -595,34 +701,44 @@ export const setStatusForBanner: ThunkCreatorType = (
  * Mark compute done in the status
  */
 export const setStatusToComputeDone: ThunkCreatorType = () => {
-  return setStatusForBanner(ConnectionStatus.NOTIFY_COMPUTE_DONE,
-    ConnectionStatus.COMPUTE_DONE)
+  return setStatusForBanner(
+    ConnectionStatus.NOTIFY_COMPUTE_DONE,
+    ConnectionStatus.COMPUTE_DONE
+  )
 }
 
 /**
  * Mark saving as done in the status
  */
 export const setStatusToSaved: ThunkCreatorType = () => {
-  return setStatusForBanner(ConnectionStatus.NOTIFY_SAVED,
-    ConnectionStatus.SAVED)
+  return setStatusForBanner(
+    ConnectionStatus.NOTIFY_SAVED,
+    ConnectionStatus.SAVED
+  )
 }
 
 /**
  * Mark submitting as done in the status
  */
 export const setStatusToSubmitted: ThunkCreatorType = () => {
-  return setStatusForBanner(ConnectionStatus.NOTIFY_SUBMITTED,
-    ConnectionStatus.SUBMITTED)
+  return setStatusForBanner(
+    ConnectionStatus.NOTIFY_SUBMITTED,
+    ConnectionStatus.SUBMITTED
+  )
 }
 
 /**
  * Merge actions into an sequential action
+ *
+ * @param actions
+ * @param removeNull
  */
-export function makeSequential (
-  actions: actionTypes.BaseAction[], removeNull: boolean = false)
-    : actionTypes.SequentialAction {
+export function makeSequential(
+  actions: actionTypes.BaseAction[],
+  removeNull: boolean = false
+): actionTypes.SequentialAction {
   if (removeNull) {
-    actions = actions.filter((a) => (a.type !== actionConsts.NULL))
+    actions = actions.filter((a) => a.type !== actionConsts.NULL)
   }
   return {
     ...makeBaseAction(actionConsts.SEQUENTIAL),

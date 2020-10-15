@@ -47,6 +47,12 @@ export class Bot {
   /** The deployment client for the models */
   private deploymentClient: DeploymentClient
 
+  /**
+   * Constructor
+   *
+   * @param deploymentClient
+   * @param botData
+   */
   constructor (
     deploymentClient: DeploymentClient, botData: BotData) {
     this.deploymentClient = deploymentClient
@@ -59,16 +65,18 @@ export class Bot {
     this.actionCount = 0
 
     // Create a socketio client
-    const socket = io.connect(
-      this.address,
-      { transports: ['websocket'], upgrade: false }
-    )
+    const socket = io.connect(this.address, {
+      transports: ["websocket"],
+      upgrade: false
+    })
     this.socket = socket
 
     this.socket.on(EventName.CONNECT, this.connectHandler.bind(this))
     this.socket.on(EventName.REGISTER_ACK, this.registerAckHandler.bind(this))
-    this.socket.on(EventName.ACTION_BROADCAST,
-      this.actionBroadcastHandler.bind(this))
+    this.socket.on(
+      EventName.ACTION_BROADCAST,
+      this.actionBroadcastHandler.bind(this)
+    )
 
     this.store = configureStore({})
 
@@ -80,7 +88,7 @@ export class Bot {
    * Called when io socket establishes a connection
    * Registers the session with the backend, triggering a register ack
    */
-  public connectHandler () {
+  public connectHandler(): void {
     const message: RegisterMessageType = {
       projectName: this.projectName,
       taskIndex: this.taskIndex,
@@ -96,14 +104,18 @@ export class Bot {
   /**
    * Called when backend sends ack of registration of this session
    * Initialized synced state
+   *
+   * @param syncState
    */
-  public registerAckHandler (syncState: State) {
+  public registerAckHandler(syncState: State): void {
     this.store = configureStore(syncState)
   }
 
   /**
    * Called when backend sends ack for actions that were sent to be synced
    * Simply logs these actions for now
+   *
+   * @param message
    */
   public async actionBroadcastHandler (
     message: SyncActionMessageType): Promise<BotAction[]> {
@@ -139,6 +151,9 @@ export class Bot {
 
   /**
    * Broadcast the synthetically generated actions
+   *
+   * @param actions
+   * @param triggerId
    */
   public broadcastActions (
     actions: BotAction[], triggerId: string) {
@@ -160,29 +175,28 @@ export class Bot {
   /**
    * Close any external resources
    */
-  public kill () {
+  public kill(): void {
     this.socket.disconnect()
   }
 
   /**
    * Gets the number of actions for the bot
    */
-  public getActionCount (): number {
+  public getActionCount(): number {
     return this.actionCount
   }
 
   /**
    * Sets action counts to 0 for the bot
    */
-
-  public resetActionCount () {
+  public resetActionCount(): void {
     this.actionCount = 0
   }
 
   /**
    * Wraps instance variables into data object
    */
-  public getData (): BotData {
+  public getData(): BotData {
     return {
       botId: this.botId,
       projectName: this.projectName,
@@ -194,13 +208,15 @@ export class Bot {
   /**
    * Get the current redux state
    */
-  public getState (): State {
+  public getState(): State {
     return this.store.getState().present
   }
 
   /**
    * Execute queries and get the resulting actions
    * Batches the queries for each endpoint
+   *
+   * @param queries
    */
   private async executeQueries (
     queryPreparer: QueryPreparer):
@@ -240,6 +256,8 @@ export class Bot {
 
   /**
    * Compute queries for the actions in the packet
+   *
+   * @param packet
    */
   private packetToQueries (
     packet: ActionPacketType): QueryPreparer {
@@ -249,8 +267,7 @@ export class Bot {
         this.actionCount += 1
         this.actionLog.push(action)
         this.store.dispatch(action)
-        Logger.info(
-          `Bot received action of type ${action.type}`)
+        Logger.info(`Bot received action of type ${action.type}`)
 
         const state = this.store.getState().present
         queryPreparer.addQuery(getQuery(state, action))

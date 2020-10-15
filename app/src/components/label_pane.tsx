@@ -1,46 +1,62 @@
-import { IconButton, List, ListItem } from '@material-ui/core'
-import Grid from '@material-ui/core/Grid'
-import MenuItem from '@material-ui/core/MenuItem'
-import Select from '@material-ui/core/Select'
-import CloseIcon from '@material-ui/icons/Close'
-import ViewStreamIcon from '@material-ui/icons/ViewStream'
-import VisibilityIcon from '@material-ui/icons/Visibility'
-import VisibilityOffIcon from '@material-ui/icons/VisibilityOff'
-import { withStyles } from '@material-ui/styles'
-import * as React from 'react'
-import SplitPane from 'react-split-pane'
-import { changeViewerConfig, deletePane, splitPane, updatePane } from '../action/common'
-import { dispatch } from '../common/session'
-import * as types from '../const/common'
-import { makeDefaultViewerConfig } from '../functional/states'
-import { paneBarStyles, resizerStyles } from '../styles/split_pane'
-import { SplitType, ViewerConfigType } from '../types/state'
-import { Component } from './component'
-import { viewerReactKey } from './drawable_viewer'
-import HomographyViewer from './homography_viewer'
-import Image3DViewer from './image3d_viewer'
-import Viewer2D from './viewer2d'
-import Viewer3D from './viewer3d'
+import { IconButton, List, ListItem } from "@material-ui/core"
+import Grid from "@material-ui/core/Grid"
+import MenuItem from "@material-ui/core/MenuItem"
+import Select from "@material-ui/core/Select"
+import CloseIcon from "@material-ui/icons/Close"
+import ViewStreamIcon from "@material-ui/icons/ViewStream"
+import VisibilityIcon from "@material-ui/icons/Visibility"
+import VisibilityOffIcon from "@material-ui/icons/VisibilityOff"
+import { withStyles } from "@material-ui/styles"
+import * as React from "react"
+import SplitPane from "react-split-pane"
 
-/** Make drawable viewer based on viewer config */
-export function viewerFactory (
-  viewerConfig: ViewerConfigType, viewerId: number
-) {
+import {
+  changeViewerConfig,
+  deletePane,
+  splitPane,
+  updatePane
+} from "../action/common"
+import { dispatch } from "../common/session"
+import * as types from "../const/common"
+import { makeDefaultViewerConfig } from "../functional/states"
+import { paneBarStyles, resizerStyles } from "../styles/split_pane"
+import { SplitType, ViewerConfigType } from "../types/state"
+import { Component } from "./component"
+import { viewerReactKey } from "./drawable_viewer"
+import HomographyViewer from "./homography_viewer"
+import Image3DViewer from "./image3d_viewer"
+import Viewer2D from "./viewer2d"
+import Viewer3D from "./viewer3d"
+
+/**
+ * Make drawable viewer based on viewer config
+ *
+ * @param viewerConfig
+ * @param viewerId
+ */
+export function viewerFactory(
+  viewerConfig: ViewerConfigType,
+  viewerId: number
+): JSX.Element {
   switch (viewerConfig.type) {
     case types.ViewerConfigTypeName.IMAGE:
-      return (<Viewer2D id={viewerId} key={viewerReactKey(viewerId)} />)
+      return <Viewer2D id={viewerId} key={viewerReactKey(viewerId)} />
     case types.ViewerConfigTypeName.POINT_CLOUD:
-      return (<Viewer3D id={viewerId} key={viewerReactKey(viewerId)} />)
+      return <Viewer3D id={viewerId} key={viewerReactKey(viewerId)} />
     case types.ViewerConfigTypeName.IMAGE_3D:
-      return (<Image3DViewer id={viewerId} key={viewerReactKey(viewerId)} />)
+      return <Image3DViewer id={viewerId} key={viewerReactKey(viewerId)} />
     case types.ViewerConfigTypeName.HOMOGRAPHY:
-      return (<HomographyViewer id={viewerId} key={viewerReactKey(viewerId)} />)
+      return <HomographyViewer id={viewerId} key={viewerReactKey(viewerId)} />
   }
-  return null
+  return <></>
 }
 
-/** convert string to enum */
-function viewerTypeFromString (type: string): types.ViewerConfigTypeName {
+/**
+ * convert string to enum
+ *
+ * @param type
+ */
+function viewerTypeFromString(type: string): types.ViewerConfigTypeName {
   switch (type) {
     case types.ViewerConfigTypeName.IMAGE:
       return types.ViewerConfigTypeName.IMAGE
@@ -55,18 +71,27 @@ function viewerTypeFromString (type: string): types.ViewerConfigTypeName {
   }
 }
 
-/** Returns whether the config types are compatible */
-function viewerConfigTypesCompatible (type1: string, type2: string) {
+/**
+ * Returns whether the config types are compatible
+ *
+ * @param type1
+ * @param type2
+ */
+function viewerConfigTypesCompatible(type1: string, type2: string): boolean {
   let configType1 = viewerTypeFromString(type1)
   let configType2 = viewerTypeFromString(type2)
 
-  if (configType1 === types.ViewerConfigTypeName.IMAGE_3D ||
-      configType1 === types.ViewerConfigTypeName.HOMOGRAPHY) {
+  if (
+    configType1 === types.ViewerConfigTypeName.IMAGE_3D ||
+    configType1 === types.ViewerConfigTypeName.HOMOGRAPHY
+  ) {
     configType1 = types.ViewerConfigTypeName.IMAGE
   }
 
-  if (configType2 === types.ViewerConfigTypeName.IMAGE_3D ||
-      configType2 === types.ViewerConfigTypeName.HOMOGRAPHY) {
+  if (
+    configType2 === types.ViewerConfigTypeName.IMAGE_3D ||
+    configType2 === types.ViewerConfigTypeName.HOMOGRAPHY
+  ) {
     configType2 = types.ViewerConfigTypeName.IMAGE
   }
 
@@ -95,16 +120,14 @@ interface Props {
 
 const HIDDEN_UNIT_SIZE = 50
 
+// TODO: remove this disable
+/* eslint-disable max-lines-per-function,max-statements */
 /**
  * Wrapper for SplitPane
  */
 class LabelPane extends Component<Props> {
-  constructor (props: Props) {
-    super(props)
-  }
-
   /** Override render */
-  public render () {
+  public render(): React.ReactNode {
     const pane = this.state.user.layout.panes[this.props.pane]
     if (pane.viewerId >= 0) {
       const viewerConfig = this.state.user.viewerConfigs[pane.viewerId]
@@ -118,11 +141,8 @@ class LabelPane extends Component<Props> {
               viewerConfig.pane,
               -1
             )
-            if (newConfig) {
-              dispatch(changeViewerConfig(
-                pane.viewerId,
-                newConfig
-              ))
+            if (newConfig !== null) {
+              dispatch(changeViewerConfig(pane.viewerId, newConfig))
             }
           }}
           classes={{ select: this.props.classes.select }}
@@ -135,7 +155,9 @@ class LabelPane extends Component<Props> {
           <MenuItem
             key={`imageTypeMenuItem${pane.id}`}
             value={types.ViewerConfigTypeName.IMAGE}
-          >Image</MenuItem>
+          >
+            Image
+          </MenuItem>
           <MenuItem
             key={`pcTypeMenuItem${pane.id}`}
             value={types.ViewerConfigTypeName.POINT_CLOUD}
@@ -160,14 +182,14 @@ class LabelPane extends Component<Props> {
       const viewerIdMenu = (
         <Select
           key={`viewerIdMenu${pane.id}`}
-          value={
-            viewerConfig.sensor
-          }
+          value={viewerConfig.sensor}
           onChange={(e) => {
-            dispatch(changeViewerConfig(
-              pane.viewerId,
-              { ...viewerConfig, sensor: e.target.value as number }
-            ))
+            dispatch(
+              changeViewerConfig(pane.viewerId, {
+                ...viewerConfig,
+                sensor: e.target.value as number
+              })
+            )
           }}
           classes={{ select: this.props.classes.select }}
           inputProps={{
@@ -176,17 +198,21 @@ class LabelPane extends Component<Props> {
             }
           }}
         >
-          {Object.keys(this.state.task.sensors).filter((key) =>
+          {Object.keys(this.state.task.sensors)
+            .filter((key) =>
               viewerConfigTypesCompatible(
                 this.state.task.sensors[Number(key)].type,
                 viewerConfig.type
               )
-          ).map((key) =>
-            <MenuItem
-              key={`viewerId${key}MenuItem${pane.id}`}
-              value={Number(key)}
-            >{key}</MenuItem>
-          )}
+            )
+            .map((key) => (
+              <MenuItem
+                key={`viewerId${key}MenuItem${pane.id}`}
+                value={Number(key)}
+              >
+                {key}
+              </MenuItem>
+            ))}
         </Select>
       )
 
@@ -197,11 +223,11 @@ class LabelPane extends Component<Props> {
             dispatch(updatePane(pane.id, { hide: !pane.hide }))
           }}
         >
-          {
-            (pane.hide) ?
-              <VisibilityIcon fontSize='small' /> :
-              <VisibilityOffIcon fontSize='small' />
-          }
+          {pane.hide ? (
+            <VisibilityIcon fontSize="small" />
+          ) : (
+            <VisibilityOffIcon fontSize="small" />
+          )}
         </IconButton>
       )
 
@@ -210,14 +236,10 @@ class LabelPane extends Component<Props> {
           key={`verticalSplitButton${pane.id}`}
           className={this.props.classes.icon90}
           onClick={() => {
-            dispatch(splitPane(
-              pane.id,
-              SplitType.VERTICAL,
-              pane.viewerId
-            ))
+            dispatch(splitPane(pane.id, SplitType.VERTICAL, pane.viewerId))
           }}
         >
-          <ViewStreamIcon fontSize='small' />
+          <ViewStreamIcon fontSize="small" />
         </IconButton>
       )
 
@@ -226,14 +248,10 @@ class LabelPane extends Component<Props> {
           key={`horizontalSplitButton${pane.id}`}
           className={this.props.classes.icon}
           onClick={() => {
-            dispatch(splitPane(
-              pane.id,
-              SplitType.HORIZONTAL,
-              pane.viewerId
-            ))
+            dispatch(splitPane(pane.id, SplitType.HORIZONTAL, pane.viewerId))
           }}
         >
-          <ViewStreamIcon fontSize='small' />
+          <ViewStreamIcon fontSize="small" />
         </IconButton>
       )
 
@@ -242,13 +260,10 @@ class LabelPane extends Component<Props> {
           key={`deleteButton${pane.id}`}
           className={this.props.classes.icon}
           onClick={() => {
-            dispatch(deletePane(
-              pane.id,
-              pane.viewerId
-            ))
+            dispatch(deletePane(pane.id, pane.viewerId))
           }}
         >
-          <CloseIcon fontSize='small' />
+          <CloseIcon fontSize="small" />
         </IconButton>
       )
 
@@ -259,83 +274,91 @@ class LabelPane extends Component<Props> {
       if (imageOnly) {
         paneControl = <></>
       } else {
-        paneControl = (<List>
-          <ListItem dense disableGutters>{deleteButton}</ListItem>
-          <ListItem dense disableGutters>
-            <div hidden={pane.hide}>
-              {verticalSplitButton}
-            </div>
-          </ListItem>
-          <ListItem dense disableGutters>
-          <div hidden={pane.hide}>
-            {horizontalSplitButton}
-          </div>
-          </ListItem>
-          <ListItem dense disableGutters>{visibilityButton}</ListItem>
-        </List>)
+        paneControl = (
+          <List>
+            <ListItem dense disableGutters>
+              {deleteButton}
+            </ListItem>
+            <ListItem dense disableGutters>
+              <div hidden={pane.hide}>{verticalSplitButton}</div>
+            </ListItem>
+            <ListItem dense disableGutters>
+              <div hidden={pane.hide}>{horizontalSplitButton}</div>
+            </ListItem>
+            <ListItem dense disableGutters>
+              {visibilityButton}
+            </ListItem>
+          </List>
+        )
       }
 
       const configBar = (
         <Grid
           key={`paneMenu${pane.id}`}
-          justify={'flex-end'}
+          justify={"flex-end"}
           container
-          direction='row'
+          direction="row"
           classes={{
             container: this.props.classes.viewer_container_bar
           }}
         >
           <div hidden={pane.hide}>
-            {(numSensors > 1) ? viewerTypeMenu : null}
-            {(numSensors > 1) ? viewerIdMenu : null}
+            {numSensors > 1 ? viewerTypeMenu : null}
+            {numSensors > 1 ? viewerIdMenu : null}
           </div>
           {paneControl}
         </Grid>
       )
       // Leaf, render viewer container
       return (
-          <div>
-            {configBar}
-            <div hidden={pane.hide}>
-              {viewerFactory(viewerConfig, pane.viewerId)}
-            </div>
+        <div>
+          {configBar}
+          <div hidden={pane.hide}>
+            {viewerFactory(viewerConfig, pane.viewerId)}
           </div>
+        </div>
       )
     }
-
     if (
-      !pane.child1 ||
-      !pane.child2 ||
+      pane.child1 === undefined ||
+      pane.child1 === 0 ||
+      pane.child2 === undefined ||
+      pane.child2 === 0 ||
       !(pane.child1 in this.state.user.layout.panes) ||
       !(pane.child2 in this.state.user.layout.panes)
     ) {
       return null
     }
-    if (!pane.split) {
-      throw new Error('Missing split type')
+    if (pane.split === undefined) {
+      throw new Error("Missing split type")
     }
 
-    const child1 =
-      (<StyledLabelPane pane={pane.child1} key={`pane${pane.child1}`}/>)
-    const child2 =
-      (<StyledLabelPane pane={pane.child2} key={`pane${pane.child2}`}/>)
+    const child1 = (
+      <StyledLabelPane pane={pane.child1} key={`pane${pane.child1}`} />
+    )
+    const child2 = (
+      <StyledLabelPane pane={pane.child2} key={`pane${pane.child2}`} />
+    )
 
     const child1State = this.state.user.layout.panes[pane.child1]
     const child2State = this.state.user.layout.panes[pane.child2]
 
-    let defaultSize = (pane.primarySize) ? pane.primarySize : '50%'
+    let defaultSize =
+      pane.primarySize !== undefined &&
+      pane.primarySize !== 0 &&
+      pane.primarySize !== ""
+        ? pane.primarySize
+        : "50%"
 
     let hiddenSize = HIDDEN_UNIT_SIZE
-    if (pane.split) {
-      if (pane.split === SplitType.HORIZONTAL) {
-        hiddenSize *= pane.numHorizontalChildren + 1
-      } else {
-        hiddenSize *= pane.numVerticalChildren + 1
-      }
+    if (pane.split === SplitType.HORIZONTAL) {
+      hiddenSize *= pane.numHorizontalChildren + 1
+    } else {
+      hiddenSize *= pane.numVerticalChildren + 1
     }
 
     if (pane.hide) {
-      defaultSize = '50%'
+      defaultSize = "50%"
     } else if (child1State.hide) {
       defaultSize = `${hiddenSize}px`
     } else if (child2State.hide) {
@@ -348,8 +371,8 @@ class LabelPane extends Component<Props> {
         split={pane.split}
         defaultSize={defaultSize}
         primary={pane.primary}
-        onChange={
-          (size) => dispatch(updatePane(pane.id, { primarySize: size }))
+        onChange={(size) =>
+          dispatch(updatePane(pane.id, { primarySize: size }))
         }
         allowResize
         size={defaultSize}

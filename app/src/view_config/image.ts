@@ -1,11 +1,9 @@
-import Session from '../common/session'
-import { decodeControlIndex, rgbToIndex } from '../drawable/util'
-import {
-  getCurrentItem
-} from '../functional/state_util'
-import { Size2D } from '../math/size2d'
-import { Vector2D } from '../math/vector2d'
-import { ImageViewerConfigType, State } from '../types/state'
+import Session from "../common/session"
+import { decodeControlIndex, rgbToIndex } from "../drawable/util"
+import { getCurrentItem } from "../functional/state_util"
+import { Size2D } from "../math/size2d"
+import { Vector2D } from "../math/vector2d"
+import { ImageViewerConfigType, State } from "../types/state"
 
 // Display export constants
 /** The maximum scale */
@@ -21,9 +19,12 @@ export const SCROLL_ZOOM_RATIO = 1.03
 
 /**
  * Get the current item in the state
- * @return {Size2D}
+ *
+ * @param state
+ * @param viewerId
+ * @returns {Size2D}
  */
-export function getCurrentImageSize (state: State, viewerId: number): Size2D {
+export function getCurrentImageSize(state: State, viewerId: number): Size2D {
   const item = getCurrentItem(state)
   const sensor = state.user.viewerConfigs[viewerId].sensor
   if (sensor in Session.images[item.index]) {
@@ -37,12 +38,17 @@ export function getCurrentImageSize (state: State, viewerId: number): Size2D {
  * Convert image coordinate to canvas coordinate.
  * If affine, assumes values to be [x, y]. Otherwise
  * performs linear transformation.
+ *
  * @param {Vector2D} values - the values to convert.
  * @param {boolean} upRes
- * @return {Vector2D} - the converted values.
+ * @param displayToImageRatio
+ * @returns {Vector2D} - the converted values.
  */
-export function toCanvasCoords (
-  values: Vector2D, upRes: boolean, displayToImageRatio: number): Vector2D {
+export function toCanvasCoords(
+  values: Vector2D,
+  upRes: boolean,
+  displayToImageRatio: number
+): Vector2D {
   const out = values.clone().scale(displayToImageRatio)
   if (upRes) {
     out.scale(UP_RES_RATIO)
@@ -54,47 +60,65 @@ export function toCanvasCoords (
  * Convert canvas coordinate to image coordinate.
  * If affine, assumes values to be [x, y]. Otherwise
  * performs linear transformation.
+ *
  * @param {Vector2D} values - the values to convert.
+ * @param displayToImageRatio
  * @param {boolean} upRes - whether the canvas has higher resolution
- * @return {Vector2D} - the converted values.
+ * @returns {Vector2D} - the converted values.
  */
-export function toImageCoords (
+export function toImageCoords(
   values: Vector2D,
-  upRes: boolean = true,
-  displayToImageRatio: number): Vector2D {
-  const up = (upRes) ? 1 / UP_RES_RATIO : 1
+  displayToImageRatio: number,
+  upRes: boolean = true
+): Vector2D {
+  const up = upRes ? 1 / UP_RES_RATIO : 1
   return values.clone().scale(displayToImageRatio * up)
 }
 
 /**
  * Draw image on canvas
+ *
  * @param canvas
  * @param context
  * @param image
  */
-export function drawImageOnCanvas (
+export function drawImageOnCanvas(
   canvas: HTMLCanvasElement,
   context: CanvasRenderingContext2D,
-  image: HTMLImageElement): void {
+  image: HTMLImageElement
+): void {
   clearCanvas(canvas, context)
-  context.drawImage(image, 0, 0, image.width, image.height,
-    0, 0, canvas.width, canvas.height)
+  context.drawImage(
+    image,
+    0,
+    0,
+    image.width,
+    image.height,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  )
 }
 
 /**
  * Clear the canvas
+ *
  * @param {HTMLCanvasElement} canvas - the canvas to redraw
  * @param {any} context - the context to redraw
- * @return {boolean}
+ * @returns {boolean}
  */
-export function clearCanvas (canvas: HTMLCanvasElement,
-                             context: CanvasRenderingContext2D) {
+export function clearCanvas(
+  canvas: HTMLCanvasElement,
+  context: CanvasRenderingContext2D
+): void {
   // Clear context
   context.clearRect(0, 0, canvas.width, canvas.height)
 }
 
 /**
  * Normalize mouse x & y to canvas coordinates
+ *
  * @param display
  * @param canvas
  * @param canvasWidth
@@ -103,14 +127,14 @@ export function clearCanvas (canvas: HTMLCanvasElement,
  * @param clientX
  * @param clientY
  */
-export function normalizeMouseCoordinates (
+export function normalizeMouseCoordinates(
   canvas: HTMLCanvasElement,
   canvasWidth: number,
   canvasHeight: number,
   displayToImageRatio: number,
   clientX: number,
   clientY: number
-) {
+): Vector2D {
   // TODO(fyu): There is a rounding error between canvas.clientHeight
   //  and canvasHeight
   let offsetX = canvas.offsetLeft
@@ -119,7 +143,7 @@ export function normalizeMouseCoordinates (
   // Test if the bounding client is defined
   // If the bounding client is not defined, it can still return DOMRect, but the
   // values are undefined.
-  // tslint:disable-next-line: strict-type-predicates
+  // eslint-disable-next-line
   if (canvasBoundingRect.x !== undefined) {
     offsetX = canvasBoundingRect.x
     offsetY = canvasBoundingRect.y
@@ -132,27 +156,31 @@ export function normalizeMouseCoordinates (
   y = Math.max(0, Math.min(y, canvasHeight))
 
   // Return in the image coordinates
-  return new Vector2D(x / displayToImageRatio,
-    y / displayToImageRatio)
+  return new Vector2D(x / displayToImageRatio, y / displayToImageRatio)
 }
 
 /**
  * Function to find mode of a number array.
+ *
  * @param {number[]} arr - the array.
- * @return {number} the mode of the array.
+ * @returns {number} the mode of the array.
  */
-export function mode (arr: number[]) {
-  return arr.sort((a, b) =>
-    arr.filter((v) => v === a).length
-    - arr.filter((v) => v === b).length
-  ).pop()
+export function mode(arr: number[]): number | undefined {
+  return arr
+    .sort(
+      (a, b) =>
+        arr.filter((v) => v === a).length - arr.filter((v) => v === b).length
+    )
+    .pop()
 }
 
 /**
  * Get handle id from image color
+ *
  * @param color
+ * @param data
  */
-export function imageDataToHandleId (data: Uint8ClampedArray) {
+export function imageDataToHandleId(data: Uint8ClampedArray): number[] {
   const arr = []
   for (let i = 0; i < 16; i++) {
     const color = rgbToIndex(Array.from(data.slice(i * 4, i * 4 + 3)))
@@ -165,6 +193,8 @@ export function imageDataToHandleId (data: Uint8ClampedArray) {
 
 /**
  * Update canvas scale
+ *
+ * @param state
  * @param display
  * @param canvas
  * @param context
@@ -172,7 +202,7 @@ export function imageDataToHandleId (data: Uint8ClampedArray) {
  * @param zoomRatio
  * @param upRes
  */
-export function updateCanvasScale (
+export function updateCanvasScale(
   state: State,
   display: HTMLDivElement,
   canvas: HTMLCanvasElement,
@@ -183,7 +213,7 @@ export function updateCanvasScale (
 ): number[] {
   const displayRect = display.getBoundingClientRect()
 
-  if (context) {
+  if (context !== null) {
     context.scale(zoomRatio, zoomRatio)
   }
 
@@ -197,8 +227,7 @@ export function updateCanvasScale (
   if (displayRect.width / displayRect.height > ratio) {
     canvasHeight = displayRect.height * config.viewScale
     canvasWidth = canvasHeight * ratio
-    displayToImageRatio = canvasHeight
-      / image.height
+    displayToImageRatio = canvasHeight / image.height
   } else {
     canvasWidth = displayRect.width * config.viewScale
     canvasHeight = canvasWidth / ratio
@@ -215,20 +244,21 @@ export function updateCanvasScale (
   }
 
   // Set canvas size
-  canvas.style.height = canvasHeight + 'px'
-  canvas.style.width = canvasWidth + 'px'
+  canvas.style.height = `${canvasHeight}px`
+  canvas.style.width = `${canvasWidth}px`
 
   // Set padding
   const padding = new Vector2D(
     Math.max(0, (displayRect.width - canvasWidth) / 2),
-    Math.max(0, (displayRect.height - canvasHeight) / 2))
+    Math.max(0, (displayRect.height - canvasHeight) / 2)
+  )
   const padX = padding.x
   const padY = padding.y
 
-  canvas.style.left = padX + 'px'
-  canvas.style.top = padY + 'px'
-  canvas.style.right = 'auto'
-  canvas.style.bottom = 'auto'
+  canvas.style.left = `${padX}px`
+  canvas.style.top = `${padY}px`
+  canvas.style.right = "auto"
+  canvas.style.bottom = "auto"
 
   return [canvasWidth, canvasHeight, displayToImageRatio, config.viewScale]
 }
